@@ -1,0 +1,9 @@
+D:\Descargar de chrome\ReservaCancha\obj\Debug\net7.0\ReservaCancha.csproj.AssemblyReference.cache
+D:\Descargar de chrome\ReservaCancha\obj\Debug\net7.0\rpswa.dswa.cache.json
+D:\Descargar de chrome\ReservaCancha\obj\Debug\net7.0\ReservaCancha.GeneratedMSBuildEditorConfig.editorconfig
+D:\Descargar de chrome\ReservaCancha\obj\Debug\net7.0\ReservaCancha.AssemblyInfoInputs.cache
+D:\Descargar de chrome\ReservaCancha\obj\Debug\net7.0\ReservaCancha.AssemblyInfo.cs
+D:\Descargar de chrome\ReservaCancha\obj\Debug\net7.0\ReservaCancha.csproj.CoreCompileInputs.cache
+D:\Descargar de chrome\ReservaCancha\obj\Debug\net7.0\ReservaCancha.MvcApplicationPartsAssemblyInfo.cache
+D:\Descargar de chrome\ReservaCancha\obj\Debug\net7.0\ReservaCancha.RazorAssemblyInfo.cache
+D:\Descargar de chrome\ReservaCancha\obj\Debug\net7.0\ReservaCancha.RazorAssemblyInfo.cs
