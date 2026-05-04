@@ -1,25 +1,31 @@
 {
   "format": 1,
   "restore": {
-    "D:\\Descargar de chrome\\ReservaCancha\\ReservaCancha.csproj": {}
+    "C:\\Users\\Enyt9\\OneDrive\\Documentos\\ProyectoAnalisis\\AnalisisProyecto\\ReservaCancha.csproj": {}
   },
   "projects": {
-    "D:\\Descargar de chrome\\ReservaCancha\\ReservaCancha.csproj": {
+    "C:\\Users\\Enyt9\\OneDrive\\Documentos\\ProyectoAnalisis\\AnalisisProyecto\\ReservaCancha.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\Descargar de chrome\\ReservaCancha\\ReservaCancha.csproj",
+        "projectUniqueName": "C:\\Users\\Enyt9\\OneDrive\\Documentos\\ProyectoAnalisis\\AnalisisProyecto\\ReservaCancha.csproj",
         "projectName": "ReservaCancha",
-        "projectPath": "D:\\Descargar de chrome\\ReservaCancha\\ReservaCancha.csproj",
-        "packagesPath": "C:\\Users\\dani3\\.nuget\\packages\\",
-        "outputPath": "D:\\Descargar de chrome\\ReservaCancha\\obj\\",
+        "projectPath": "C:\\Users\\Enyt9\\OneDrive\\Documentos\\ProyectoAnalisis\\AnalisisProyecto\\ReservaCancha.csproj",
+        "packagesPath": "C:\\Users\\Enyt9\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\Enyt9\\OneDrive\\Documentos\\ProyectoAnalisis\\AnalisisProyecto\\obj\\",
         "projectStyle": "PackageReference",
+        "fallbackFolders": [
+          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
+        ],
         "configFilePaths": [
-          "C:\\Users\\dani3\\AppData\\Roaming\\NuGet\\NuGet.Config"
+          "C:\\Users\\Enyt9\\AppData\\Roaming\\NuGet\\NuGet.Config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
+          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
         ],
         "originalTargetFrameworks": [
           "net9.0"
         ],
         "sources": {
+          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -72,7 +78,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.301/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.306/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

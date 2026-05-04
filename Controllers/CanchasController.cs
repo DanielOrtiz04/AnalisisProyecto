@@ -17,23 +17,24 @@ namespace ReservaCancha.Controllers
         }
 
      
-        [HttpGet]
-        public async Task<IActionResult> GetCanchas()
+        [HttpGet("{canchaId}/disponibilidad")]
+        public async Task<IActionResult> GetDisponibilidad(int canchaId, [FromQuery] DateTime fecha)
         {
-            var canchas = await _context.Canchas
-                .Where(c => c.Disponible)
-                .Select(c => new
-                {
-                    c.Id,
-                    c.Nombre,
-                    c.Tipo,
-                    c.Precio,
-                    c.Descripcion,
-                    c.Disponible
-                })
+            var reservas = await _context.Reservas
+                .Where(r => r.CanchaId == canchaId && r.Fecha.Date == fecha.Date)
+                .Select(r => r.HoraInicio)
                 .ToListAsync();
 
-            return Ok(canchas);
+            var todosHorarios = Enumerable.Range(8, 14)
+                .Select(h => TimeSpan.FromHours(h))
+                .ToList();
+
+            var disponibles = todosHorarios
+                .Where(h => !reservas.Contains(h))
+                .Select(h => h.ToString(@"hh\:mm"))
+                .ToList();
+
+            return Ok(disponibles);
         }
     }
 }

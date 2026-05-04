@@ -1,0 +1,50 @@
+@page "/reservar/{CanchaId:int}"
+@inject HttpClient Http
+
+<h3>Horarios disponibles</h3>
+
+<div>
+    <label>Selecciona una fecha:</label>
+    <input type="date" @bind="fechaSeleccionada" @bind:after="Consultar" />
+</div>
+
+@if (cargando)
+{
+    <p>Cargando...</p>
+}
+else if (horarios != null)
+{
+    @if (horarios.Count == 0)
+    {
+        <p>No hay horarios disponibles para esta fecha.</p>
+    }
+    else
+    {
+        <ul>
+            @foreach (var h in horarios)
+            {
+                <li>@h</li>
+            }
+        </ul>
+    }
+}
+
+@code {
+    [Parameter] public int CanchaId { get; set; }
+    private DateTime fechaSeleccionada = DateTime.Today;
+    private List<string>? horarios;
+    private bool cargando = false;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await Consultar();
+    }
+
+    private async Task Consultar()
+    {
+        cargando = true;
+        horarios = await Http.GetFromJsonAsync<List<string>>(
+            $"api/canchas/{CanchaId}/disponibilidad?fecha={fechaSeleccionada:yyyy-MM-dd}");
+        cargando = false;
+    }
+}
