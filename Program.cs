@@ -18,6 +18,8 @@ if (!app.Environment.IsDevelopment())
     app.UseHsts();
 }
 
+//Hola
+
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();

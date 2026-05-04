@@ -23,8 +23,8 @@ namespace ReservaCancha.Controllers
         public async Task<IActionResult> Registrar([FromBody] RegistroRequest request)
         {
             // Validaciones básicas
-            if (string.IsNullOrWhiteSpace(request.Nombre)   ||
-                string.IsNullOrWhiteSpace(request.Correo)   ||
+            if (string.IsNullOrWhiteSpace(request.Nombre) ||
+                string.IsNullOrWhiteSpace(request.Correo) ||
                 string.IsNullOrWhiteSpace(request.Telefono) ||
                 string.IsNullOrWhiteSpace(request.Password))
             {
@@ -46,18 +46,41 @@ namespace ReservaCancha.Controllers
             // RF-1 Backend: Crear usuario en la base de datos
             var nuevoUsuario = new Usuario
             {
-                Nombre       = request.Nombre.Trim(),
-                Correo       = request.Correo.Trim().ToLower(),
-                Telefono     = request.Telefono.Trim(),
+                Nombre = request.Nombre.Trim(),
+                Correo = request.Correo.Trim().ToLower(),
+                Telefono = request.Telefono.Trim(),
                 PasswordHash = passwordHash,
                 FechaRegistro = DateTime.UtcNow,
-                Activo       = true,
+                Activo = true,
             };
 
             _context.Usuarios.Add(nuevoUsuario);
             await _context.SaveChangesAsync();
 
             return Ok(new { mensaje = "Usuario registrado exitosamente.", id = nuevoUsuario.Id });
+        }
+
+
+        [HttpPost("login")]
+        public async Task<IActionResult> Login([FromBody] LoginRequest request)
+        {
+            if (string.IsNullOrWhiteSpace(request.Correo) || string.IsNullOrWhiteSpace(request.Password))
+            {
+                return BadRequest(new { mensaje = "Correo y contraseña son requeridos." });
+            }
+
+            string hashIngresado = HashPassword(request.Password);
+            string correoNormalizado = request.Correo.Trim().ToLower();
+
+            var usuario = await _context.Usuarios
+                .FirstOrDefaultAsync(u => u.Correo == correoNormalizado && u.PasswordHash == hashIngresado);
+
+            if (usuario == null)
+            {
+                return Unauthorized(new { mensaje = "Correo o contraseña incorrectos." });
+            }
+
+            return Ok(new { mensaje = "Acceso exitoso", usuarioId = usuario.Id, nombre = usuario.Nombre });
         }
 
         // ── Utilidad: hash de contraseña ────────────────────────────────
@@ -72,9 +95,17 @@ namespace ReservaCancha.Controllers
     // ── DTOs ────────────────────────────────────────────────────────────
     public class RegistroRequest
     {
-        public string Nombre   { get; set; } = string.Empty;
-        public string Correo   { get; set; } = string.Empty;
+        public string Nombre { get; set; } = string.Empty;
+        public string Correo { get; set; } = string.Empty;
         public string Telefono { get; set; } = string.Empty;
         public string Password { get; set; } = string.Empty;
     }
+
+    public class LoginRequest
+    {
+        public string Correo { get; set; } = string.Empty;
+        public string Password { get; set; } = string.Empty;
+    }
+
 }
+
