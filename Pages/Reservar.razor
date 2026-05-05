@@ -1,0 +1,180 @@
+@page "/reservar/{CanchaId:int}"
+@using ReservaCancha.Models
+@inject NavigationManager NavManager
+
+<PageTitle>Reservar cancha | ReservaCancha</PageTitle>
+
+<div class="rv-wrap">
+
+    <div class="rv-header">
+        <button class="rv-back" @onclick="Volver">&#8592; Volver</button>
+        <h1 class="rv-title">Reservar cancha</h1>
+        <p class="rv-subtitle">Selecciona la fecha y horario disponible</p>
+    </div>
+
+    @if (reservaExitosa)
+    {
+        <div class="rv-toast rv-toast--success">
+            Reserva confirmada exitosamente. Te esperamos.
+        </div>
+    }
+
+    @if (!string.IsNullOrEmpty(errorMensaje))
+    {
+        <div class="rv-toast rv-toast--error">
+            @errorMensaje
+        </div>
+    }
+
+    <div class="rv-card">
+
+        <div class="rv-field">
+            <label>Cancha seleccionada</label>
+            <div class="rv-cancha-info">Cancha #@CanchaId</div>
+        </div>
+
+        <div class="rv-field">
+            <label for="fecha">Fecha de reserva</label>
+            <input type="date" id="fecha" class="rv-input"
+                   min="@DateTime.Today.ToString("yyyy-MM-dd")"
+                   @bind="fechaSeleccionada" />
+            @if (mostrarErrores && fechaSeleccionada == default)
+            {
+                <p class="rv-err">Selecciona una fecha.</p>
+            }
+        </div>
+
+        <div class="rv-row">
+            <div class="rv-field">
+                <label for="horaInicio">Hora de inicio</label>
+                <input type="time" id="horaInicio" class="rv-input" @bind="horaInicio" />
+                @if (mostrarErrores && horaInicio == default)
+                {
+                    <p class="rv-err">Selecciona hora de inicio.</p>
+                }
+            </div>
+            <div class="rv-field">
+                <label for="horaFin">Hora de fin</label>
+                <input type="time" id="horaFin" class="rv-input" @bind="horaFin" />
+                @if (mostrarErrores && horaFin == default)
+                {
+                    <p class="rv-err">Selecciona hora de fin.</p>
+                }
+            </div>
+        </div>
+
+        <button class="rv-btn" @onclick="EnviarReserva" disabled="@cargando">
+            @if (cargando)
+            {
+                <span class="rv-spinner"></span>
+            }
+            else
+            {
+                <span>Confirmar reserva</span>
+            }
+        </button>
+    </div>
+</div>
+
+@code {
+    [Parameter] public int CanchaId { get; set; }
+
+    private DateTime fechaSeleccionada;
+    private TimeSpan horaInicio;
+    private TimeSpan horaFin;
+    private bool cargando = false;
+    private bool reservaExitosa = false;
+    private bool mostrarErrores = false;
+    private string? errorMensaje;
+
+    private async Task EnviarReserva()
+    {
+        mostrarErrores = true;
+        errorMensaje = null;
+        reservaExitosa = false;
+
+        if (fechaSeleccionada == default || horaInicio == default || horaFin == default)
+            return;
+
+        if (horaFin <= horaInicio)
+        {
+            errorMensaje = "La hora de fin debe ser mayor a la hora de inicio.";
+            return;
+        }
+
+        cargando = true;
+
+        try
+        {
+            using var http = new System.Net.Http.HttpClient();
+            var payload = new
+            {
+                canchaId   = CanchaId,
+                usuarioId  = 1,
+                fecha      = fechaSeleccionada.ToString("yyyy-MM-dd"),
+                horaInicio = horaInicio.ToString(@"hh\:mm\:ss"),
+                horaFin    = horaFin.ToString(@"hh\:mm\:ss")
+            };
+
+            var respuesta = await http.PostAsJsonAsync("http://localhost:5085/api/reservas", payload);
+
+            if (respuesta.IsSuccessStatusCode)
+            {
+                reservaExitosa = true;
+                fechaSeleccionada = default;
+                horaInicio = default;
+                horaFin = default;
+                mostrarErrores = false;
+            }
+            else if (respuesta.StatusCode == System.Net.HttpStatusCode.Conflict)
+            {
+                errorMensaje = "El horario seleccionado ya esta reservado. Elige otro.";
+            }
+            else
+            {
+                errorMensaje = "Ocurrio un error. Intenta de nuevo.";
+            }
+        }
+        catch
+        {
+            errorMensaje = "No se pudo conectar al servidor.";
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+
+    private void Volver()
+    {
+        NavManager.NavigateTo("/canchas");
+    }
+}
+
+<style>
+    .rv-wrap { max-width: 500px; margin: 2rem auto; padding: 0 1rem; font-family: Segoe UI, sans-serif; }
+    .rv-header { margin-bottom: 1.5rem; }
+    .rv-back { background: none; border: none; color: #185FA5; font-size: 14px; cursor: pointer; padding: 0; margin-bottom: 8px; font-weight: 500; }
+    .rv-back:hover { text-decoration: underline; }
+    .rv-title { font-size: 22px; font-weight: 600; margin-bottom: 4px; }
+    .rv-subtitle { font-size: 14px; color: #5F5E5A; }
+
+    .rv-toast { padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 1rem; }
+    .rv-toast--success { background: #EAF3DE; color: #3B6D11; border: 0.5px solid #C0DD97; }
+    .rv-toast--error { background: #FCEBEB; color: #A32D2D; border: 0.5px solid #F7C1C1; }
+
+    .rv-card { background: #fff; border: 0.5px solid rgba(0,0,0,.12); border-radius: 12px; padding: 1.5rem; }
+    .rv-field { margin-bottom: 1rem; }
+    .rv-field label { display: block; font-size: 13px; font-weight: 500; color: #5F5E5A; margin-bottom: 5px; }
+    .rv-input { width: 100%; padding: 9px 12px; font-size: 14px; border: 0.5px solid rgba(0,0,0,.2); border-radius: 8px; outline: none; transition: border-color .15s; }
+    .rv-input:focus { border-color: #185FA5; box-shadow: 0 0 0 3px rgba(24,95,165,.15); }
+    .rv-err { font-size: 12px; color: #E24B4A; margin-top: 4px; }
+    .rv-cancha-info { padding: 9px 12px; background: #F1EFE8; border-radius: 8px; font-size: 14px; font-weight: 500; color: #185FA5; }
+    .rv-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+
+    .rv-btn { width: 100%; padding: 10px; font-size: 14px; font-weight: 500; background: #185FA5; color: #fff; border: none; border-radius: 8px; cursor: pointer; margin-top: .5rem; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background .15s; }
+    .rv-btn:hover:not(:disabled) { background: #0C447C; }
+    .rv-btn:disabled { background: #B4B2A9; cursor: not-allowed; }
+    .rv-spinner { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,.35); border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; display: inline-block; }
+    @@keyframes spin { to { transform: rotate(360deg); } }
+</style>
