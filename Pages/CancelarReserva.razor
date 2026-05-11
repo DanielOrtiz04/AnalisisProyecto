@@ -1,0 +1,211 @@
+@page "/mis-reservas"
+@using ReservaCancha.Models
+@inject NavigationManager NavManager
+
+<PageTitle>Mis Reservas | ReservaCancha</PageTitle>
+
+<div class="cr-wrap">
+
+    <div class="cr-header">
+        <h1 class="cr-title">Mis Reservas</h1>
+        <p class="cr-subtitle">Administra tus reservas activas</p>
+    </div>
+
+    @if (mensajeExito != null)
+    {
+        <div class="cr-toast cr-toast--success">
+            @mensajeExito
+        </div>
+    }
+
+    @if (errorMensaje != null)
+    {
+        <div class="cr-toast cr-toast--error">
+            @errorMensaje
+        </div>
+    }
+
+    @if (cargando)
+    {
+        <div class="cr-loading">
+            <div class="cr-spinner"></div>
+            <p>Cargando reservas...</p>
+        </div>
+    }
+    else if (reservas.Count == 0)
+    {
+        <div class="cr-empty">
+            <p>No tienes reservas activas.</p>
+            <a href="/canchas" class="cr-link">Ver canchas disponibles</a>
+        </div>
+    }
+    else
+    {
+        <div class="cr-list">
+            @foreach (var reserva in reservas)
+            {
+                <div class="cr-card">
+                    <div class="cr-card-info">
+                        <span class="cr-badge @(reserva.Estado == "Confirmada" ? "cr-badge--activa" : "cr-badge--cancelada")">
+                            @reserva.Estado
+                        </span>
+                        <h2 class="cr-cancha">Cancha #@reserva.CanchaId</h2>
+                        <p class="cr-detalle">Fecha: @reserva.Fecha.ToString("dd/MM/yyyy")</p>
+                        <p class="cr-detalle">Horario: @reserva.HoraInicio.ToString(@"hh\:mm") - @reserva.HoraFin.ToString(@"hh\:mm")</p>
+                    </div>
+
+                    @if (reserva.Estado == "Confirmada")
+                    {
+                        @if (reservaACancelar == reserva.Id)
+                        {
+                            <div class="cr-confirm">
+                                <p class="cr-confirm-msg">¿Seguro que deseas cancelar esta reserva?</p>
+                                <div class="cr-confirm-btns">
+                                    <button class="cr-btn cr-btn--danger" @onclick="() => ConfirmarCancelacion(reserva.Id)" disabled="@cancelando">
+                                        @if (cancelando) { <span class="cr-spinner-sm"></span> }
+                                        else { <span>Si, cancelar</span> }
+                                    </button>
+                                    <button class="cr-btn cr-btn--secondary" @onclick="CancelarAccion">No, volver</button>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <button class="cr-btn cr-btn--outline" @onclick="() => SolicitarCancelacion(reserva.Id)">
+                                Cancelar reserva
+                            </button>
+                        }
+                    }
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private List<ReservaVista> reservas = new();
+    private bool cargando = true;
+    private bool cancelando = false;
+    private int? reservaACancelar = null;
+    private string? mensajeExito;
+    private string? errorMensaje;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarReservas();
+    }
+
+    private async Task CargarReservas()
+    {
+        cargando = true;
+        try
+        {
+            using var http = new System.Net.Http.HttpClient();
+            var resultado = await http.GetFromJsonAsync<List<ReservaVista>>("http://localhost:5085/api/reservas/usuario/1");
+            reservas = resultado ?? new();
+        }
+        catch
+        {
+            errorMensaje = "No se pudieron cargar las reservas.";
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+
+    private void SolicitarCancelacion(int id)
+    {
+        mensajeExito = null;
+        errorMensaje = null;
+        reservaACancelar = id;
+    }
+
+    private void CancelarAccion()
+    {
+        reservaACancelar = null;
+    }
+
+    private async Task ConfirmarCancelacion(int id)
+    {
+        cancelando = true;
+        errorMensaje = null;
+        mensajeExito = null;
+
+        try
+        {
+            using var http = new System.Net.Http.HttpClient();
+            var respuesta = await http.PatchAsync($"http://localhost:5085/api/reservas/{id}/cancelar", null);
+
+            if (respuesta.IsSuccessStatusCode)
+            {
+                mensajeExito = "Reserva cancelada exitosamente.";
+                reservaACancelar = null;
+                await CargarReservas();
+            }
+            else
+            {
+                errorMensaje = "No se pudo cancelar la reserva. Intenta de nuevo.";
+            }
+        }
+        catch
+        {
+            errorMensaje = "No se pudo conectar al servidor.";
+        }
+        finally
+        {
+            cancelando = false;
+        }
+    }
+
+    public class ReservaVista
+    {
+        public int      Id         { get; set; }
+        public int      CanchaId   { get; set; }
+        public DateTime Fecha      { get; set; }
+        public TimeSpan HoraInicio { get; set; }
+        public TimeSpan HoraFin    { get; set; }
+        public string   Estado     { get; set; } = string.Empty;
+    }
+}
+
+<style>
+    .cr-wrap { max-width: 600px; margin: 2rem auto; padding: 0 1rem; font-family: Segoe UI, sans-serif; }
+    .cr-header { margin-bottom: 1.5rem; }
+    .cr-title { font-size: 22px; font-weight: 600; margin-bottom: 4px; }
+    .cr-subtitle { font-size: 14px; color: #5F5E5A; }
+
+    .cr-toast { padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 1rem; }
+    .cr-toast--success { background: #EAF3DE; color: #3B6D11; border: 0.5px solid #C0DD97; }
+    .cr-toast--error { background: #FCEBEB; color: #A32D2D; border: 0.5px solid #F7C1C1; }
+
+    .cr-loading { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 3rem; color: #5F5E5A; }
+    .cr-spinner { width: 28px; height: 28px; border: 3px solid rgba(24,95,165,.2); border-top-color: #185FA5; border-radius: 50%; animation: spin .7s linear infinite; }
+    .cr-spinner-sm { width: 14px; height: 14px; border: 2px solid rgba(255,255,255,.35); border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; display: inline-block; }
+    @@keyframes spin { to { transform: rotate(360deg); } }
+
+    .cr-empty { text-align: center; padding: 3rem; color: #5F5E5A; }
+    .cr-link { color: #185FA5; font-weight: 500; text-decoration: none; font-size: 14px; }
+
+    .cr-list { display: flex; flex-direction: column; gap: 1rem; }
+    .cr-card { background: #fff; border: 0.5px solid rgba(0,0,0,.12); border-radius: 12px; padding: 1.25rem; }
+    .cr-card-info { margin-bottom: 1rem; }
+    .cr-badge { font-size: 11px; padding: 3px 8px; border-radius: 20px; font-weight: 500; }
+    .cr-badge--activa { background: #EAF3DE; color: #3B6D11; }
+    .cr-badge--cancelada { background: #F1EFE8; color: #5F5E5A; }
+    .cr-cancha { font-size: 16px; font-weight: 600; margin: 6px 0 4px; }
+    .cr-detalle { font-size: 13px; color: #5F5E5A; margin: 2px 0; }
+
+    .cr-confirm { background: #FFF8E6; border: 0.5px solid #EFD28A; border-radius: 8px; padding: 12px; }
+    .cr-confirm-msg { font-size: 13px; font-weight: 500; margin-bottom: 10px; color: #7A5C00; }
+    .cr-confirm-btns { display: flex; gap: 8px; }
+
+    .cr-btn { padding: 8px 16px; font-size: 13px; font-weight: 500; border-radius: 8px; cursor: pointer; border: none; display: flex; align-items: center; gap: 6px; transition: background .15s; }
+    .cr-btn--danger { background: #E24B4A; color: #fff; }
+    .cr-btn--danger:hover:not(:disabled) { background: #B83130; }
+    .cr-btn--secondary { background: #F1EFE8; color: #444441; }
+    .cr-btn--secondary:hover { background: #E0DED6; }
+    .cr-btn--outline { background: none; border: 0.5px solid #E24B4A; color: #E24B4A; }
+    .cr-btn--outline:hover { background: #FCEBEB; }
+    .cr-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+</style>
