@@ -52,6 +52,24 @@ namespace ReservaCancha.Controllers
             return Ok(new { mensaje = "Reserva confirmada exitosamente.", id = reserva.Id });
         }
 
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetReserva(int id)
+        {
+            var reserva = await _context.Reservas.FindAsync(id);
+            if (reserva == null)
+                return NotFound(new { mensaje = "Reserva no encontrada." });
+
+            return Ok(new
+            {
+                reserva.Id,
+                reserva.CanchaId,
+                reserva.Fecha,
+                reserva.HoraInicio,
+                reserva.HoraFin,
+                reserva.Estado
+            });
+        }
+
         [HttpGet("usuario/{usuarioId}")]
         public async Task<IActionResult> GetReservasUsuario(int usuarioId)
         {
@@ -71,7 +89,7 @@ namespace ReservaCancha.Controllers
 
             return Ok(reservas);
         }
-      
+
         [HttpPatch("{id}/cancelar")]
         public async Task<IActionResult> CancelarReserva(int id)
         {
@@ -83,13 +101,47 @@ namespace ReservaCancha.Controllers
             if (reserva.Estado == "Cancelada")
                 return BadRequest(new { mensaje = "La reserva ya esta cancelada." });
 
-           
             reserva.Estado = "Cancelada";
             await _context.SaveChangesAsync();
 
             return Ok(new { mensaje = "Reserva cancelada exitosamente." });
         }
-      
+
+        [HttpPatch("{id}/modificar")]
+        public async Task<IActionResult> ModificarReserva(int id, [FromBody] ModificarRequest request)
+        {
+            var reserva = await _context.Reservas.FindAsync(id);
+
+            if (reserva == null)
+                return NotFound(new { mensaje = "Reserva no encontrada." });
+
+            if (reserva.Estado == "Cancelada")
+                return BadRequest(new { mensaje = "No se puede modificar una reserva cancelada." });
+
+            if (request.HoraFin <= request.HoraInicio)
+                return BadRequest(new { mensaje = "La hora de fin debe ser mayor a la hora de inicio." });
+
+            bool horarioOcupado = await _context.Reservas.AnyAsync(r =>
+                r.Id != id &&
+                r.CanchaId == reserva.CanchaId &&
+                r.Fecha.Date == request.Fecha.Date &&
+                r.Estado == "Confirmada" &&
+                r.HoraInicio < request.HoraFin &&
+                r.HoraFin > request.HoraInicio
+            );
+
+            if (horarioOcupado)
+                return Conflict(new { mensaje = "El horario seleccionado ya esta ocupado. Elige otro." });
+
+            reserva.Fecha      = request.Fecha.Date;
+            reserva.HoraInicio = request.HoraInicio;
+            reserva.HoraFin    = request.HoraFin;
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new { mensaje = "Reserva modificada exitosamente." });
+        }
+
         [HttpGet("disponibilidad")]
         public async Task<IActionResult> GetDisponibilidad([FromQuery] int canchaId, [FromQuery] DateTime fecha)
         {
@@ -106,6 +158,13 @@ namespace ReservaCancha.Controllers
     {
         public int      CanchaId   { get; set; }
         public int      UsuarioId  { get; set; }
+        public DateTime Fecha      { get; set; }
+        public TimeSpan HoraInicio { get; set; }
+        public TimeSpan HoraFin    { get; set; }
+    }
+
+    public class ModificarRequest
+    {
         public DateTime Fecha      { get; set; }
         public TimeSpan HoraInicio { get; set; }
         public TimeSpan HoraFin    { get; set; }
