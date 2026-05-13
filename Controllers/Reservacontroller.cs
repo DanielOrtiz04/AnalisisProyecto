@@ -73,21 +73,24 @@ namespace ReservaCancha.Controllers
         [HttpGet("usuario/{usuarioId}")]
         public async Task<IActionResult> GetReservasUsuario(int usuarioId)
         {
-            var reservas = await _context.Reservas
-                .Where(r => r.UsuarioId == usuarioId)
-                .OrderByDescending(r => r.Fecha)
+            var resultado = await _context.Reservas
+                .Where(r => r.UsuarioId == usuarioId && r.Estado != null)
                 .Select(r => new
                 {
                     r.Id,
                     r.CanchaId,
-                    r.Fecha,
-                    r.HoraInicio,
-                    r.HoraFin,
+                    Fecha      = r.Fecha.ToString(),
+                    HoraInicio = r.HoraInicio.ToString(),
+                    HoraFin    = r.HoraFin.ToString(),
                     r.Estado
                 })
+                .OrderByDescending(r => r.Id)
                 .ToListAsync();
 
-            return Ok(reservas);
+            if (!resultado.Any())
+                return Ok(new { mensaje = "No se encontraron reservas para este usuario.", data = resultado });
+
+            return Ok(new { mensaje = "Reservas obtenidas correctamente.", data = resultado });
         }
 
         [HttpPatch("{id}/cancelar")]
