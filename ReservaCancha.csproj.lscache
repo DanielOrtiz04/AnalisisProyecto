@@ -470,6 +470,7 @@ Pages/
  ModificarReserva.razor
  Registro.razor
  Reservar.razor
+ VisualizacionReservas.razor
  _Host.cshtml
 Shared/
  MainLayout.razor
@@ -491,6 +492,7 @@ Pages/
  ModificarReserva.razor
  Registro.razor
  Reservar.razor
+ VisualizacionReservas.razor
  _Host.cshtml
 Shared/
  MainLayout.razor

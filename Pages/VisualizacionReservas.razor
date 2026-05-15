@@ -1,0 +1,138 @@
+@page "/admin/reservas"
+@inject NavigationManager NavManager
+
+<PageTitle>Visualización de Reservas | ReservaCancha</PageTitle>
+
+<div class="vr-wrap">
+
+    <div class="vr-header">
+        <h1 class="vr-title">Visualización de Reservas</h1>
+        <p class="vr-subtitle">Listado de todas las reservas registradas en el sistema</p>
+    </div>
+
+    @if (errorMensaje != null)
+    {
+        <div class="vr-toast vr-toast--error">@errorMensaje</div>
+    }
+
+    @if (cargando)
+    {
+        <div class="vr-loading">
+            <div class="vr-spinner"></div>
+            <p>Cargando reservas...</p>
+        </div>
+    }
+    else if (reservas.Count == 0)
+    {
+        <div class="vr-empty">
+            <p>No hay reservas registradas en el sistema.</p>
+        </div>
+    }
+    else
+    {
+        <table class="vr-table">
+            <thead>
+                <tr>
+                    <th>#ID</th>
+                    <th>Cancha</th>
+                    <th>Usuario</th>
+                    <th>Fecha</th>
+                    <th>Hora Inicio</th>
+                    <th>Hora Fin</th>
+                    <th>Estado</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var r in reservas)
+                {
+                    <tr>
+                        <td>@r.Id</td>
+                        <td>@r.CanchaId</td>
+                        <td>@r.UsuarioId</td>
+                        <td>@r.Fecha</td>
+                        <td>@r.HoraInicio</td>
+                        <td>@r.HoraFin</td>
+                        <td>
+                            <span class="vr-badge @(r.Estado == "Confirmada" ? "vr-badge--activa" : "vr-badge--cancelada")">
+                                @r.Estado
+                            </span>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <p class="vr-total">
+            Total: <strong>@reservas.Count</strong> reservas
+        </p>
+    }
+
+</div>
+
+@code {
+    private List<ReservaAdmin> reservas  = new();
+    private bool               cargando  = true;
+    private string?            errorMensaje;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            using var http = new System.Net.Http.HttpClient();
+            var resultado = await http.GetFromJsonAsync<RespuestaReservas>("http://localhost:5085/api/reservas");
+            reservas = resultado?.Data ?? new();
+        }
+        catch
+        {
+            errorMensaje = "No se pudieron cargar las reservas.";
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+
+    public class ReservaAdmin
+    {
+        public int    Id         { get; set; }
+        public int    CanchaId   { get; set; }
+        public int    UsuarioId  { get; set; }
+        public string Fecha      { get; set; } = string.Empty;
+        public string HoraInicio { get; set; } = string.Empty;
+        public string HoraFin    { get; set; } = string.Empty;
+        public string Estado     { get; set; } = string.Empty;
+    }
+
+    public class RespuestaReservas
+    {
+        public string             Mensaje { get; set; } = string.Empty;
+        public List<ReservaAdmin> Data    { get; set; } = new();
+    }
+}
+
+<style>
+    .vr-wrap { max-width: 900px; margin: 2rem auto; padding: 0 1rem; font-family: Segoe UI, sans-serif; }
+    .vr-header { margin-bottom: 1.5rem; }
+    .vr-title { font-size: 22px; font-weight: 600; margin-bottom: 4px; }
+    .vr-subtitle { font-size: 14px; color: #5F5E5A; }
+
+    .vr-toast { padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 1rem; }
+    .vr-toast--error { background: #FCEBEB; color: #A32D2D; border: 0.5px solid #F7C1C1; }
+
+    .vr-loading { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 3rem; color: #5F5E5A; }
+    .vr-spinner { width: 28px; height: 28px; border: 3px solid rgba(24,95,165,.2); border-top-color: #185FA5; border-radius: 50%; animation: spin .7s linear infinite; }
+    @@keyframes spin { to { transform: rotate(360deg); } }
+
+    .vr-empty { text-align: center; padding: 3rem; color: #5F5E5A; }
+
+    .vr-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .vr-table th { background: #F1EFE8; text-align: left; padding: 10px 12px; font-weight: 600; border-bottom: 1px solid rgba(0,0,0,.1); }
+    .vr-table td { padding: 10px 12px; border-bottom: 0.5px solid rgba(0,0,0,.07); }
+    .vr-table tr:hover td { background: #FAFAF8; }
+
+    .vr-badge { font-size: 11px; padding: 3px 8px; border-radius: 20px; font-weight: 500; }
+    .vr-badge--activa { background: #EAF3DE; color: #3B6D11; }
+    .vr-badge--cancelada { background: #F1EFE8; color: #5F5E5A; }
+
+    .vr-total { text-align: right; color: #5F5E5A; font-size: 12px; margin-top: .75rem; }
+</style>
