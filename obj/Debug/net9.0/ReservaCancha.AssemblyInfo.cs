@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ReservaCancha")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+7b9da067434390bae5cec56d0ac176a0e3bccc67")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+b925d1a5ed6b24ee5a1a1db1516ff30730699b37")]
 [assembly: System.Reflection.AssemblyProductAttribute("ReservaCancha")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ReservaCancha")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
