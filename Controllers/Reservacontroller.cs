@@ -293,4 +293,20 @@ namespace ReservaCancha.Controllers
         public TimeSpan HoraFin { get; set; }
     }
 }
+    public class ReservaAdmin
+    {
+        public int    Id         { get; set; }
+        public int    CanchaId   { get; set; }
+        public int    UsuarioId  { get; set; }
+        public string Fecha      { get; set; } = string.Empty;
+        public string HoraInicio { get; set; } = string.Empty;
+        public string HoraFin    { get; set; } = string.Empty;
+        public string Estado     { get; set; } = string.Empty;
+    }
+
+    public class RespuestaReservas
+    {
+        public string             Mensaje { get; set; } = string.Empty;
+        public List<ReservaAdmin> Data    { get; set; } = new();
+    }
 
