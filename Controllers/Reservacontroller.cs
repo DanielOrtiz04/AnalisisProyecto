@@ -253,6 +253,28 @@ namespace ReservaCancha.Controllers
 
             return Ok(reservas);
         }
+    
+    // Aqui agregue el RF-10: agrego comentrario 
+        [HttpGet]
+        public async Task<IActionResult> GetTodasLasReservas()
+        {
+            var reservas = await _context.Reservas
+                .Select(r => new
+                {
+                    r.Id,
+                    r.CanchaId,
+                    r.UsuarioId,
+                    Fecha      = r.Fecha.ToString("yyyy-MM-dd"),
+                    HoraInicio = r.HoraInicio.ToString(),
+                    HoraFin    = r.HoraFin.ToString(),
+                    r.Estado
+                })
+                .OrderByDescending(r => r.Id)
+                .ToListAsync();
+
+            return Ok(new { mensaje = "Reservas obtenidas correctamente.", data = reservas });
+        }
+
     }
 
     public class ReservaRequest
@@ -271,3 +293,4 @@ namespace ReservaCancha.Controllers
         public TimeSpan HoraFin { get; set; }
     }
 }
+
