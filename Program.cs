@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using ReservaCancha.Data;
+using ReservaCancha.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,6 +11,8 @@ builder.Services.AddHttpClient();
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+builder.Services.AddScoped<NotificacionReservaService>();
+
 var app = builder.Build();
 
 if (!app.Environment.IsDevelopment())
@@ -17,8 +20,6 @@ if (!app.Environment.IsDevelopment())
     app.UseExceptionHandler("/Error");
     app.UseHsts();
 }
-
-//Hola23
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
