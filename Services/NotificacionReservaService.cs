@@ -1,7 +1,3 @@
-// RF-12: Notificaciones de reservas
-// Backend: Generar mensajes de confirmación, detectar cambios en las reservas
-//          y enviar información de estado al frontend.
-
 using ReservaCancha.Models;
 
 namespace ReservaCancha.Services
