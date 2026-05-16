@@ -1,0 +1,182 @@
+@page "/admin/reporte"
+@inject NavigationManager NavManager
+
+<PageTitle>Reporte de Reservas | ReservaCancha</PageTitle>
+
+<div class="rp-wrap">
+
+    <div class="rp-header">
+        <h1 class="rp-title">Reporte de Reservas</h1>
+        <p class="rp-subtitle">Resumen general de todas las reservas del sistema</p>
+    </div>
+
+    @if (errorMensaje != null)
+    {
+        <div class="rp-toast rp-toast--error">@errorMensaje</div>
+    }
+
+    @if (cargando)
+    {
+        <div class="rp-loading">
+            <div class="rp-spinner"></div>
+            <p>Cargando reporte...</p>
+        </div>
+    }
+    else if (reporte != null)
+    {
+        <div class="rp-cards">
+            <div class="rp-card">
+                <p class="rp-card-label">Total Reservas</p>
+                <p class="rp-card-value">@reporte.TotalReservas</p>
+            </div>
+            <div class="rp-card rp-card--confirmada">
+                <p class="rp-card-label">Confirmadas</p>
+                <p class="rp-card-value">@reporte.TotalConfirmadas</p>
+            </div>
+            <div class="rp-card rp-card--cancelada">
+                <p class="rp-card-label">Canceladas</p>
+                <p class="rp-card-value">@reporte.TotalCanceladas</p>
+            </div>
+        </div>
+
+        <h2 class="rp-section-title">Reservas por Cancha</h2>
+        <table class="rp-table">
+            <thead>
+                <tr>
+                    <th>Cancha ID</th>
+                    <th>Total Reservas</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var c in reporte.ReservasPorCancha)
+                {
+                    <tr>
+                        <td>Cancha #@c.CanchaId</td>
+                        <td>@c.Total</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <h2 class="rp-section-title">Listado de Reservas</h2>
+        <table class="rp-table">
+            <thead>
+                <tr>
+                    <th>#ID</th>
+                    <th>Cancha</th>
+                    <th>Usuario</th>
+                    <th>Fecha</th>
+                    <th>Hora Inicio</th>
+                    <th>Hora Fin</th>
+                    <th>Estado</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var r in reporte.Detalle)
+                {
+                    <tr>
+                        <td>@r.Id</td>
+                        <td>@r.CanchaId</td>
+                        <td>@r.UsuarioId</td>
+                        <td>@r.Fecha</td>
+                        <td>@r.HoraInicio</td>
+                        <td>@r.HoraFin</td>
+                        <td>
+                            <span class="rp-badge @(r.Estado == "Confirmada" ? "rp-badge--activa" : "rp-badge--cancelada")">
+                                @r.Estado
+                            </span>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+
+        <p class="rp-total">
+            Mostrando <strong>@reporte.Detalle.Count</strong> reservas
+        </p>
+    }
+
+</div>
+
+@code {
+    private ReporteData? reporte;
+    private bool         cargando     = true;
+    private string?      errorMensaje;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            using var http = new System.Net.Http.HttpClient();
+            reporte = await http.GetFromJsonAsync<ReporteData>("http://localhost:5085/api/reservas/reporte");
+        }
+        catch
+        {
+            errorMensaje = "No se pudo cargar el reporte.";
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+
+    public class ReporteData
+    {
+        public int                    TotalReservas     { get; set; }
+        public int                    TotalConfirmadas  { get; set; }
+        public int                    TotalCanceladas   { get; set; }
+        public List<CanchaResumen>    ReservasPorCancha { get; set; } = new();
+        public List<ReservaDetalle>   Detalle           { get; set; } = new();
+    }
+
+    public class CanchaResumen
+    {
+        public int CanchaId { get; set; }
+        public int Total    { get; set; }
+    }
+
+    public class ReservaDetalle
+    {
+        public int    Id         { get; set; }
+        public int    CanchaId   { get; set; }
+        public int    UsuarioId  { get; set; }
+        public string Fecha      { get; set; } = string.Empty;
+        public string HoraInicio { get; set; } = string.Empty;
+        public string HoraFin    { get; set; } = string.Empty;
+        public string Estado     { get; set; } = string.Empty;
+    }
+}
+
+<style>
+    .rp-wrap { max-width: 900px; margin: 2rem auto; padding: 0 1rem; font-family: Segoe UI, sans-serif; }
+    .rp-header { margin-bottom: 1.5rem; }
+    .rp-title { font-size: 22px; font-weight: 600; margin-bottom: 4px; }
+    .rp-subtitle { font-size: 14px; color: #5F5E5A; }
+
+    .rp-toast { padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 1rem; }
+    .rp-toast--error { background: #FCEBEB; color: #A32D2D; border: 0.5px solid #F7C1C1; }
+
+    .rp-loading { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 3rem; color: #5F5E5A; }
+    .rp-spinner { width: 28px; height: 28px; border: 3px solid rgba(24,95,165,.2); border-top-color: #185FA5; border-radius: 50%; animation: spin .7s linear infinite; }
+    @@keyframes spin { to { transform: rotate(360deg); } }
+
+    .rp-cards { display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 2rem; }
+    .rp-card { flex: 1; min-width: 140px; background: #F1EFE8; border-radius: 12px; padding: 1.2rem; text-align: center; border: 0.5px solid rgba(0,0,0,.1); }
+    .rp-card--confirmada { background: #EAF3DE; }
+    .rp-card--cancelada  { background: #FCEBEB; }
+    .rp-card-label { font-size: 12px; color: #5F5E5A; margin-bottom: 6px; }
+    .rp-card-value { font-size: 28px; font-weight: 700; margin: 0; }
+
+    .rp-section-title { font-size: 16px; font-weight: 600; margin: 1.5rem 0 .75rem; }
+
+    .rp-table { width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 1.5rem; }
+    .rp-table th { background: #F1EFE8; text-align: left; padding: 10px 12px; font-weight: 600; border-bottom: 1px solid rgba(0,0,0,.1); }
+    .rp-table td { padding: 10px 12px; border-bottom: 0.5px solid rgba(0,0,0,.07); }
+    .rp-table tr:hover td { background: #FAFAF8; }
+
+    .rp-badge { font-size: 11px; padding: 3px 8px; border-radius: 20px; font-weight: 500; }
+    .rp-badge--activa   { background: #EAF3DE; color: #3B6D11; }
+    .rp-badge--cancelada { background: #F1EFE8; color: #5F5E5A; }
+
+    .rp-total { text-align: right; color: #5F5E5A; font-size: 12px; margin-top: .75rem; }
+</style>
