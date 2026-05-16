@@ -76,7 +76,46 @@ namespace ReservaCancha.Controllers
                 reserva.Id
             });
         }
+        // RF-XX: Consultar información de reservas para reportes
+        [HttpGet("reporte")]
+        public async Task<IActionResult> GetReporteReservas()
+        {
+            var totalReservas = await _context.Reservas.CountAsync();
+            var totalConfirmadas = await _context.Reservas.CountAsync(r => r.Estado == "Confirmada");
+            var totalCanceladas = await _context.Reservas.CountAsync(r => r.Estado == "Cancelada");
 
+            var reservasPorCancha = await _context.Reservas
+                .GroupBy(r => r.CanchaId)
+                .Select(g => new
+                {
+                    CanchaId = g.Key,
+                    Total = g.Count()
+                })
+                .ToListAsync();
+
+            var detalle = await _context.Reservas
+                .Select(r => new
+                {
+                    r.Id,
+                    r.CanchaId,
+                    r.UsuarioId,
+                    Fecha = r.Fecha.ToString("yyyy-MM-dd"),
+                    HoraInicio = r.HoraInicio.ToString(),
+                    HoraFin = r.HoraFin.ToString(),
+                    r.Estado
+                })
+                .OrderByDescending(r => r.Id)
+                .ToListAsync();
+
+            return Ok(new
+            {
+                totalReservas,
+                totalConfirmadas,
+                totalCanceladas,
+                reservasPorCancha,
+                detalle
+            });
+        }
         [HttpGet("{id}")]
         public async Task<IActionResult> GetReserva(int id)
         {
