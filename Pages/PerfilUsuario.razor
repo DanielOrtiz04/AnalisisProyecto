@@ -1,0 +1,140 @@
+@page "/perfil/{UsuarioId:int}"
+@using ReservaCancha.Models
+@inject HttpClient Http
+@inject NavigationManager NavManager
+
+<PageTitle>Mi Perfil | ReservaCancha</PageTitle>
+
+<h1>Mi Perfil</h1>
+
+@if (cargando)
+{
+    <p>Cargando perfil...</p>
+}
+else if (errorMensaje != null)
+{
+    <div class="alert alert-danger">@errorMensaje</div>
+}
+else
+{
+    <div class="card p-4 mb-4">
+        <h4>Información personal</h4>
+        <hr />
+
+        <div class="mb-3">
+            <label class="form-label"><strong>Nombre</strong></label>
+            <input class="form-control" @bind="nombre" />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label"><strong>Correo</strong></label>
+            <input class="form-control" value="@correo" disabled />
+            <small class="text-muted">El correo no se puede modificar.</small>
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label"><strong>Teléfono</strong></label>
+            <input class="form-control" @bind="telefono" />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label"><strong>Fecha de registro</strong></label>
+            <input class="form-control" value="@fechaRegistro.ToString("dd/MM/yyyy")" disabled />
+        </div>
+
+        @if (mensajeExito != null)
+        {
+            <div class="alert alert-success">@mensajeExito</div>
+        }
+
+        @if (mensajeError != null)
+        {
+            <div class="alert alert-danger">@mensajeError</div>
+        }
+
+        <button class="btn btn-primary" @onclick="GuardarCambios">
+             Guardar cambios
+        </button>
+
+    </div>
+}
+
+@code {
+
+    [Parameter] public int UsuarioId { get; set; }
+
+    private string nombre = string.Empty;
+    private string correo = string.Empty;
+    private string telefono = string.Empty;
+    private DateTime fechaRegistro;
+
+    private bool cargando = true;
+    private string? errorMensaje;
+    private string? mensajeExito;
+    private string? mensajeError;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var resultado = await Http.GetFromJsonAsync<PerfilDto>(
+                $"http://localhost:5085/api/usuarios/{UsuarioId}/perfil"
+            );
+
+            if (resultado != null)
+            {
+                nombre = resultado.Nombre;
+                correo = resultado.Correo;
+                telefono = resultado.Telefono;
+                fechaRegistro = resultado.FechaRegistro;
+            }
+        }
+        catch
+        {
+            errorMensaje = "No se pudo cargar el perfil.";
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+
+    private async Task GuardarCambios()
+    {
+        mensajeExito = null;
+        mensajeError = null;
+
+        if (string.IsNullOrWhiteSpace(nombre) || string.IsNullOrWhiteSpace(telefono))
+        {
+            mensajeError = "Nombre y teléfono son requeridos.";
+            return;
+        }
+
+        try
+        {
+            var response = await Http.PutAsJsonAsync(
+                $"http://localhost:5085/api/usuarios/{UsuarioId}/perfil",
+                new { Nombre = nombre, Telefono = telefono }
+            );
+
+            if (response.IsSuccessStatusCode)
+                mensajeExito = "Perfil actualizado correctamente.";
+            else
+                mensajeError = "No se pudo actualizar el perfil.";
+        }
+        catch
+        {
+            mensajeError = "Error al conectar con el servidor.";
+        }
+    }
+
+    private class PerfilDto
+    {
+        public int Id { get; set; }
+        public string Nombre { get; set; } = string.Empty;
+        public string Correo { get; set; } = string.Empty;
+        public string Telefono { get; set; } = string.Empty;
+        public DateTime FechaRegistro { get; set; }
+        public bool Activo { get; set; }
+    }
+}
