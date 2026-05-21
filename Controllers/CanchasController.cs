@@ -16,24 +16,74 @@ namespace ReservaCancha.Controllers
             _context = context;
         }
 
-     
+        // GET: api/canchas
         [HttpGet]
-        public async Task<IActionResult> GetCanchas()
+        public async Task<ActionResult<IEnumerable<Cancha>>> ObtenerCanchas()
         {
-            var canchas = await _context.Canchas
-                .Where(c => c.Disponible)
-                .Select(c => new
-                {
-                    c.Id,
-                    c.Nombre,
-                    c.Tipo,
-                    c.Precio,
-                    c.Descripcion,
-                    c.Disponible
-                })
-                .ToListAsync();
+            return await _context.Canchas.ToListAsync();
+        }
 
-            return Ok(canchas);
+        // GET: api/canchas/5
+        [HttpGet("{id}")]
+        public async Task<ActionResult<Cancha>> ObtenerCancha(int id)
+        {
+            var cancha = await _context.Canchas.FindAsync(id);
+
+            if (cancha == null)
+            {
+                return NotFound();
+            }
+
+            return cancha;
+        }
+
+        // POST: api/canchas
+        [HttpPost]
+        public async Task<ActionResult<Cancha>> CrearCancha(Cancha cancha)
+        {
+            _context.Canchas.Add(cancha);
+
+            await _context.SaveChangesAsync();
+
+            return CreatedAtAction(
+                nameof(ObtenerCancha),
+                new { id = cancha.Id },
+                cancha
+            );
+        }
+
+        // PUT: api/canchas/5
+        [HttpPut("{id}")]
+        public async Task<IActionResult> EditarCancha(int id, Cancha cancha)
+        {
+            if (id != cancha.Id)
+            {
+                return BadRequest();
+            }
+
+            _context.Entry(cancha).State = EntityState.Modified;
+
+            await _context.SaveChangesAsync();
+
+            return NoContent();
+        }
+
+        // DELETE: api/canchas/5
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> EliminarCancha(int id)
+        {
+            var cancha = await _context.Canchas.FindAsync(id);
+
+            if (cancha == null)
+            {
+                return NotFound();
+            }
+
+            _context.Canchas.Remove(cancha);
+
+            await _context.SaveChangesAsync();
+
+            return NoContent();
         }
     }
 }
