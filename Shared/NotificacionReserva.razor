@@ -1,0 +1,47 @@
+@using ReservaCancha.Services
+
+@if (Notificacion is not null)
+{
+    <div class="nrf-toast nrf-toast--@TipoCss" role="alert">
+        <span class="nrf-toast__icono">@Icono</span>
+        <span class="nrf-toast__mensaje">@Notificacion.Mensaje</span>
+    </div>
+}
+
+@code {
+    [Parameter] public NotificacionReserva? Notificacion { get; set; }
+
+    private string TipoCss => Notificacion?.Tipo switch
+    {
+        TipoNotificacion.Exito       => "success",
+        TipoNotificacion.Error       => "error",
+        TipoNotificacion.Advertencia => "warning",
+        _ => "info"
+    };
+
+    private string Icono => Notificacion?.Tipo switch
+    {
+        TipoNotificacion.Exito       => "✓",
+        TipoNotificacion.Error       => "✕",
+        TipoNotificacion.Advertencia => "⚠",
+        _ => "ℹ"
+    };
+}
+
+<style>
+    .nrf-toast {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 14px;
+        border-radius: 8px;
+        font-size: 13px;
+        margin-bottom: 1rem;
+    }
+    .nrf-toast__icono { font-weight: 700; font-size: 15px; }
+
+    .nrf-toast--success { background: #EAF3DE; color: #3B6D11; border: 0.5px solid #C0DD97; }
+    .nrf-toast--error   { background: #FCEBEB; color: #A32D2D; border: 0.5px solid #F7C1C1; }
+    .nrf-toast--warning { background: #FFF8E1; color: #7A5500; border: 0.5px solid #FFDF80; }
+    .nrf-toast--info    { background: #E8F1FA; color: #185FA5; border: 0.5px solid #A8C8F0; }
+</style>

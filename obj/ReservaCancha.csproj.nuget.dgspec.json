@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "D:\\Descargar de chrome\\ReservaCancha\\ReservaCancha.csproj": {}
+    "C:\\Users\\dani3\\Desktop\\AnalisisProyecto\\AnalisisProyecto\\ReservaCancha.csproj": {}
   },
   "projects": {
-    "D:\\Descargar de chrome\\ReservaCancha\\ReservaCancha.csproj": {
+    "C:\\Users\\dani3\\Desktop\\AnalisisProyecto\\AnalisisProyecto\\ReservaCancha.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\Descargar de chrome\\ReservaCancha\\ReservaCancha.csproj",
+        "projectUniqueName": "C:\\Users\\dani3\\Desktop\\AnalisisProyecto\\AnalisisProyecto\\ReservaCancha.csproj",
         "projectName": "ReservaCancha",
-        "projectPath": "D:\\Descargar de chrome\\ReservaCancha\\ReservaCancha.csproj",
+        "projectPath": "C:\\Users\\dani3\\Desktop\\AnalisisProyecto\\AnalisisProyecto\\ReservaCancha.csproj",
         "packagesPath": "C:\\Users\\dani3\\.nuget\\packages\\",
-        "outputPath": "D:\\Descargar de chrome\\ReservaCancha\\obj\\",
+        "outputPath": "C:\\Users\\dani3\\Desktop\\AnalisisProyecto\\AnalisisProyecto\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\dani3\\AppData\\Roaming\\NuGet\\NuGet.Config"

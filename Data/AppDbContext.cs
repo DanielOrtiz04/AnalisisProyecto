@@ -9,6 +9,7 @@ namespace ReservaCancha.Data
 
         public DbSet<Usuario> Usuarios { get; set; }
         public DbSet<Cancha> Canchas { get; set; }
+        public DbSet<Reserva> Reservas { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -19,7 +20,6 @@ namespace ReservaCancha.Data
                 .Property(c => c.Precio)
                 .HasColumnType("decimal(10,2)");
 
-           
             modelBuilder.Entity<Cancha>().HasData(
                 new Cancha { Id = 1, Nombre = "Cancha Norte", Tipo = "Futbol", Precio = 150, Descripcion = "Cancha de grass sintetico con iluminacion.", Disponible = true },
                 new Cancha { Id = 2, Nombre = "Cancha Sur", Tipo = "Basquetbol", Precio = 100, Descripcion = "Cancha techada con piso de madera.", Disponible = true },

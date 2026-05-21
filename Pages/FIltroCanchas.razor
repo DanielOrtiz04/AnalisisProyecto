@@ -1,0 +1,129 @@
+@page "/filtro-canchas"
+@using ReservaCancha.Models
+@inject NavigationManager NavManager
+@inject HttpClient Http
+
+<PageTitle>Filtrar Canchas | ReservaCancha</PageTitle>
+
+<h1>Buscar y Filtrar Canchas</h1>
+
+<div class="card p-3 mb-4">
+    <div class="row g-3">
+
+        <div class="col-md-5">
+            <label class="form-label"><strong>Buscar por tipo</strong></label>
+            <input class="form-control"
+                   placeholder="Ej: Futbol, Basquetbol, Voleibol..."
+                   @bind="filtroTipo"
+                   @bind:event="oninput" />
+        </div>
+
+        <div class="col-md-4">
+            <label class="form-label"><strong>Disponibilidad</strong></label>
+            <select class="form-select" @bind="filtroDisponible">
+                <option value="">Todas</option>
+                <option value="true">Solo disponibles</option>
+                <option value="false">No disponibles</option>
+            </select>
+        </div>
+
+        <div class="col-md-3 d-flex align-items-end">
+            <button class="btn btn-primary w-100" @onclick="Buscar">
+                🔍 Filtrar
+            </button>
+        </div>
+
+    </div>
+</div>
+
+@if (cargando)
+{
+    <p>Cargando canchas...</p>
+}
+else if (errorMensaje != null)
+{
+    <div class="alert alert-danger">@errorMensaje</div>
+}
+else if (resultados.Count == 0)
+{
+    <div class="alert alert-warning">No se encontraron canchas con los filtros aplicados.</div>
+}
+else
+{
+    <p class="text-muted">@resultados.Count cancha(s) encontrada(s)</p>
+
+    @foreach (var cancha in resultados)
+    {
+        <div class="card mb-3 p-3">
+            <h4>@cancha.Nombre</h4>
+            <p><strong>Tipo:</strong> @cancha.Tipo</p>
+            <p><strong>Descripción:</strong> @cancha.Descripcion</p>
+            <p><strong>Precio:</strong> Q.@cancha.Precio</p>
+            <p>
+                <strong>Estado:</strong>
+                @if (cancha.Disponible)
+                {
+                    <span class="badge bg-success">Disponible</span>
+                }
+                else
+                {
+                    <span class="badge bg-danger">No disponible</span>
+                }
+            </p>
+            @if (cancha.Disponible)
+            {
+                <button class="btn btn-success"
+                        @onclick="() => Reservar(cancha.Id)">
+                    Reservar
+                </button>
+            }
+        </div>
+    }
+}
+
+@code {
+
+    private string filtroTipo = string.Empty;
+    private string filtroDisponible = string.Empty;
+    private List<Cancha> resultados = new();
+    private bool cargando = false;
+    private string? errorMensaje;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Buscar();
+    }
+
+    private async Task Buscar()
+    {
+        cargando = true;
+        errorMensaje = null;
+
+        try
+        {
+            var url = "http://localhost:5085/api/canchas/filtrar?";
+
+            if (!string.IsNullOrWhiteSpace(filtroTipo))
+                url += $"tipo={Uri.EscapeDataString(filtroTipo)}&";
+
+            if (!string.IsNullOrWhiteSpace(filtroDisponible))
+                url += $"disponible={filtroDisponible}";
+
+            var resultado = await Http.GetFromJsonAsync<List<Cancha>>(url);
+            resultados = resultado ?? new();
+        }
+        catch
+        {
+            errorMensaje = "No se pudo conectar al servidor. Intenta de nuevo.";
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+
+    private void Reservar(int canchaId)
+    {
+        NavManager.NavigateTo($"/reservar/{canchaId}");
+    }
+}

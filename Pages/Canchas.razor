@@ -1,81 +1,160 @@
 ﻿@page "/canchas"
 @using ReservaCancha.Models
 @inject NavigationManager NavManager
+@inject HttpClient Http
 
-<PageTitle>Canchas disponibles | ReservaCancha</PageTitle>
+<PageTitle>Canchas | ReservaCancha</PageTitle>
 
-<div class="cv-wrap">
+<h1>Canchas disponibles</h1>
 
-    <div class="cv-header">
-        <h1 class="cv-title">Canchas disponibles</h1>
-        <p class="cv-subtitle">Encuentra y reserva tu cancha ideal</p>
+<h3>
+    @(nuevaCancha.Id == 0 ? "Agregar cancha" : "Editar cancha")
+</h3>
+
+<EditForm Model="nuevaCancha"
+          OnValidSubmit="GuardarCancha">
+
+    <div class="mb-2">
+        <InputText class="form-control"
+                   placeholder="Nombre"
+                   @bind-Value="nuevaCancha.Nombre" />
     </div>
 
-    @if (cargando)
+    <div class="mb-2">
+        <InputText class="form-control"
+                   placeholder="Tipo"
+                   @bind-Value="nuevaCancha.Tipo" />
+    </div>
+
+    <div class="mb-2">
+        <InputText class="form-control"
+                   placeholder="Descripción"
+                   @bind-Value="nuevaCancha.Descripcion" />
+    </div>
+
+    <div class="mb-2">
+        <InputNumber class="form-control"
+                     placeholder="Precio"
+                     @bind-Value="nuevaCancha.Precio" />
+    </div>
+
+    <div class="form-check mb-3">
+        <InputCheckbox class="form-check-input"
+                       @bind-Value="nuevaCancha.Disponible" />
+
+        <label class="form-check-label">
+            Disponible
+        </label>
+    </div>
+
+    <button type="submit"
+            class="btn btn-primary">
+
+        Guardar
+
+    </button>
+
+</EditForm>
+
+<hr />
+
+@if (cargando)
+{
+    <p>Cargando canchas...</p>
+}
+else if (errorMensaje != null)
+{
+    <div class="alert alert-danger">
+        @errorMensaje
+    </div>
+}
+else if (canchas.Count == 0)
+{
+    <p>No hay canchas disponibles.</p>
+}
+else
+{
+    @foreach (var cancha in canchas)
     {
-        <div class="cv-loading">
-            <div class="cv-spinner"></div>
-            <p>Cargando canchas...</p>
+        <div class="card mb-3 p-3">
+
+            <h4>@cancha.Nombre</h4>
+
+            <p>
+                <strong>Tipo:</strong>
+                @cancha.Tipo
+            </p>
+
+            <p>
+                <strong>Descripción:</strong>
+                @cancha.Descripcion
+            </p>
+
+            <p>
+                <strong>Precio:</strong>
+                Q.@cancha.Precio
+            </p>
+
+            <p>
+                <strong>Estado:</strong>
+                @(cancha.Disponible ? "Disponible" : "No disponible")
+            </p>
+
+            <div class="d-flex gap-2">
+
+                <button class="btn btn-success"
+                        @onclick="() => Reservar(cancha.Id)">
+                    Reservar
+                </button>
+
+                <button class="btn btn-warning"
+                        @onclick="() => Editar(cancha)">
+                    Editar
+                </button>
+
+                <button class="btn btn-danger"
+                        @onclick="() => Eliminar(cancha.Id)">
+                    Eliminar
+                </button>
+
+            </div>
+
         </div>
     }
-    else if (errorMensaje != null)
-    {
-        <div class="cv-toast-error">
-            @errorMensaje
-        </div>
-    }
-    else if (canchas.Count == 0)
-    {
-        <div class="cv-empty">
-            <p>No hay canchas disponibles por el momento.</p>
-        </div>
-    }
-    else
-    {
-        <div class="cv-grid">
-            @foreach (var cancha in canchas)
-            {
-                <div class="cv-card">
-                    <div class="cv-card-header">
-                        <span class="cv-tipo">@cancha.Tipo</span>
-                        <span class="cv-badge">Disponible</span>
-                    </div>
-                    <h2 class="cv-nombre">@cancha.Nombre</h2>
-                    <p class="cv-descripcion">@cancha.Descripcion</p>
-                    <div class="cv-footer">
-                        <span class="cv-precio">Q@(cancha.Precio.ToString("F2"))/hora</span>
-                        <button class="cv-btn" @onclick="() => Reservar(cancha.Id)">Reservar</button>
-                    </div>
-                </div>
-            }
-        </div>
-    }
-</div>
+}
 
 @code {
+
     private List<Cancha> canchas = new();
+
+    private Cancha nuevaCancha = new();
+
     private bool cargando = true;
+
     private string? errorMensaje;
 
     protected override async Task OnInitializedAsync()
     {
-        await CargarCanchas();
+        await ObtenerCanchas();
     }
 
-    private async Task CargarCanchas()
+    private async Task ObtenerCanchas()
     {
         cargando = true;
         errorMensaje = null;
 
         try
         {
-            using var http = new System.Net.Http.HttpClient();
-            var resultado = await http.GetFromJsonAsync<List<Cancha>>("http://localhost:5085/api/canchas");
-            canchas = resultado ?? new List<Cancha>();
+            var resultado = await Http.GetFromJsonAsync<List<Cancha>>(
+                "http://localhost:5085/api/canchas"
+            );
+
+            canchas = resultado ?? new();
         }
         catch
         {
-            errorMensaje = "No se pudo cargar la lista de canchas. Intenta de nuevo.";
+            errorMensaje =
+                "No se pudieron cargar las canchas.";
         }
         finally
         {
@@ -83,31 +162,52 @@
         }
     }
 
+    private async Task GuardarCancha()
+    {
+        if (nuevaCancha.Id == 0)
+        {
+            await Http.PostAsJsonAsync(
+                "http://localhost:5085/api/canchas",
+                nuevaCancha
+            );
+        }
+        else
+        {
+            await Http.PutAsJsonAsync(
+                $"http://localhost:5085/api/canchas/{nuevaCancha.Id}",
+                nuevaCancha
+            );
+        }
+
+        nuevaCancha = new();
+
+        await ObtenerCanchas();
+    }
+
+    private void Editar(Cancha cancha)
+    {
+        nuevaCancha = new Cancha
+        {
+            Id = cancha.Id,
+            Nombre = cancha.Nombre,
+            Tipo = cancha.Tipo,
+            Descripcion = cancha.Descripcion,
+            Precio = cancha.Precio,
+            Disponible = cancha.Disponible
+        };
+    }
+
+    private async Task Eliminar(int id)
+    {
+        await Http.DeleteAsync(
+            $"http://localhost:5085/api/canchas/{id}"
+        );
+
+        await ObtenerCanchas();
+    }
+
     private void Reservar(int canchaId)
     {
         NavManager.NavigateTo($"/reservar/{canchaId}");
     }
 }
-
-<style>
-    .cv-wrap { max-width: 900px; margin: 2rem auto; padding: 0 1rem; font-family: Segoe UI, sans-serif; }
-    .cv-header { margin-bottom: 2rem; }
-    .cv-title { font-size: 24px; font-weight: 600; margin-bottom: 4px; }
-    .cv-subtitle { font-size: 14px; color: #5F5E5A; }
-    .cv-loading { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 3rem; color: #5F5E5A; }
-    .cv-spinner { width: 32px; height: 32px; border: 3px solid rgba(24,95,165,.2); border-top-color: #185FA5; border-radius: 50%; animation: spin .7s linear infinite; }
-    @@keyframes spin { to { transform: rotate(360deg); } }
-    .cv-toast-error { background: #FCEBEB; color: #A32D2D; border: 0.5px solid #F7C1C1; padding: 10px 14px; border-radius: 8px; font-size: 13px; }
-    .cv-empty { text-align: center; padding: 3rem; color: #5F5E5A; font-size: 14px; }
-    .cv-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; }
-    .cv-card { background: #fff; border: 0.5px solid rgba(0,0,0,.12); border-radius: 12px; padding: 1.25rem; display: flex; flex-direction: column; gap: 8px; }
-    .cv-card-header { display: flex; justify-content: space-between; align-items: center; }
-    .cv-tipo { font-size: 12px; font-weight: 500; background: #E6F1FB; color: #185FA5; padding: 3px 8px; border-radius: 20px; }
-    .cv-badge { font-size: 11px; background: #EAF3DE; color: #3B6D11; padding: 3px 8px; border-radius: 20px; }
-    .cv-nombre { font-size: 16px; font-weight: 600; margin: 0; }
-    .cv-descripcion { font-size: 13px; color: #5F5E5A; margin: 0; flex: 1; }
-    .cv-footer { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
-    .cv-precio { font-size: 16px; font-weight: 600; color: #185FA5; }
-    .cv-btn { background: #185FA5; color: #fff; border: none; border-radius: 8px; padding: 8px 16px; font-size: 13px; font-weight: 500; cursor: pointer; }
-    .cv-btn:hover { background: #0C447C; }
-</style>

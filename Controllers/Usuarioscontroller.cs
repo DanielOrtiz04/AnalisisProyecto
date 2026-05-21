@@ -22,7 +22,6 @@ namespace ReservaCancha.Controllers
         [HttpPost("registrar")]
         public async Task<IActionResult> Registrar([FromBody] RegistroRequest request)
         {
-            // Validaciones básicas
             if (string.IsNullOrWhiteSpace(request.Nombre) ||
                 string.IsNullOrWhiteSpace(request.Correo) ||
                 string.IsNullOrWhiteSpace(request.Telefono) ||
@@ -31,7 +30,6 @@ namespace ReservaCancha.Controllers
                 return BadRequest(new { mensaje = "Todos los campos son requeridos." });
             }
 
-            // RF-1 Backend: Validar que el correo no exista
             bool correoExiste = await _context.Usuarios
                 .AnyAsync(u => u.Correo.ToLower() == request.Correo.ToLower());
 
@@ -40,10 +38,8 @@ namespace ReservaCancha.Controllers
                 return Conflict(new { mensaje = "El correo ya está registrado. Usa otro o inicia sesión." });
             }
 
-            // Hashear la contraseña (SHA-256 básico; en producción usa BCrypt o Argon2)
             string passwordHash = HashPassword(request.Password);
 
-            // RF-1 Backend: Crear usuario en la base de datos
             var nuevoUsuario = new Usuario
             {
                 Nombre = request.Nombre.Trim(),
@@ -60,7 +56,7 @@ namespace ReservaCancha.Controllers
             return Ok(new { mensaje = "Usuario registrado exitosamente.", id = nuevoUsuario.Id });
         }
 
-
+        
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
@@ -83,7 +79,48 @@ namespace ReservaCancha.Controllers
             return Ok(new { mensaje = "Acceso exitoso", usuarioId = usuario.Id, nombre = usuario.Nombre });
         }
 
-        // ── Utilidad: hash de contraseña ────────────────────────────────
+        
+        [HttpGet("{id}/perfil")]
+        public async Task<IActionResult> GetPerfil(int id)
+        {
+            var usuario = await _context.Usuarios.FindAsync(id);
+
+            if (usuario == null)
+                return NotFound(new { mensaje = "Usuario no encontrado." });
+
+            return Ok(new
+            {
+                usuario.Id,
+                usuario.Nombre,
+                usuario.Correo,
+                usuario.Telefono,
+                usuario.FechaRegistro,
+                usuario.Activo
+            });
+        }
+
+        [HttpPut("{id}/perfil")]
+        public async Task<IActionResult> ActualizarPerfil(int id, [FromBody] ActualizarPerfilRequest request)
+        {
+            var usuario = await _context.Usuarios.FindAsync(id);
+
+            if (usuario == null)
+                return NotFound(new { mensaje = "Usuario no encontrado." });
+
+            if (string.IsNullOrWhiteSpace(request.Nombre) ||
+                string.IsNullOrWhiteSpace(request.Telefono))
+            {
+                return BadRequest(new { mensaje = "Nombre y teléfono son requeridos." });
+            }
+
+            usuario.Nombre = request.Nombre.Trim();
+            usuario.Telefono = request.Telefono.Trim();
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new { mensaje = "Perfil actualizado correctamente." });
+        }
+
         private static string HashPassword(string password)
         {
             using var sha = SHA256.Create();
@@ -92,7 +129,6 @@ namespace ReservaCancha.Controllers
         }
     }
 
-    // ── DTOs ────────────────────────────────────────────────────────────
     public class RegistroRequest
     {
         public string Nombre { get; set; } = string.Empty;
@@ -106,6 +142,9 @@ namespace ReservaCancha.Controllers
         public string Correo { get; set; } = string.Empty;
         public string Password { get; set; } = string.Empty;
     }
-
+    public class ActualizarPerfilRequest
+    {
+        public string Nombre { get; set; } = string.Empty;
+        public string Telefono { get; set; } = string.Empty;
+    }
 }
-

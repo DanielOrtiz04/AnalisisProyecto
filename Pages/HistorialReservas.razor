@@ -1,0 +1,158 @@
+@page "/historial"
+@using ReservaCancha.Models
+@inject NavigationManager NavManager
+
+<PageTitle>Historial de Reservas | ReservaCancha</PageTitle>
+
+<div class="hr-wrap">
+
+    <div class="hr-header">
+        <h1 class="hr-title">Historial de Reservas</h1>
+        <p class="hr-subtitle">Lista de todas tus reservas realizadas</p>
+    </div>
+
+    @if (errorMensaje != null)
+    {
+        <div class="hr-toast hr-toast--error">@errorMensaje</div>
+    }
+
+    @if (cargando)
+    {
+        <div class="hr-loading">
+            <div class="hr-spinner"></div>
+            <p>Cargando reservas...</p>
+        </div>
+    }
+    else if (reservas.Count == 0)
+    {
+        <div class="hr-empty">
+            <p>No tienes reservas registradas.</p>
+            <a href="/canchas" class="hr-link">Ver canchas disponibles</a>
+        </div>
+    }
+    else
+    {
+        <div class="hr-filtros">
+            <input class="hr-search"
+                   type="text"
+                   placeholder="Buscar por cancha o estado..."
+                   @bind="filtroTexto"
+                   @bind:event="oninput" />
+
+            <input class="hr-date"
+                   type="date"
+                   @bind="filtroFecha"
+                   @bind:after="StateHasChanged" />
+
+            <button class="hr-btn-limpiar" @onclick="LimpiarFiltros">Limpiar</button>
+        </div>
+
+        <div class="hr-list">
+            @foreach (var r in ReservasFiltradas)
+            {
+                <div class="hr-card">
+                    <div class="hr-card-info">
+                        <span class="hr-badge @(r.Estado == "Confirmada" ? "hr-badge--activa" : "hr-badge--cancelada")">
+                            @r.Estado
+                        </span>
+                        <h2 class="hr-cancha">Cancha #@r.CanchaId</h2>
+                        <p class="hr-detalle">Fecha: @r.Fecha.ToString("dd/MM/yyyy")</p>
+                        <p class="hr-detalle">Horario: @r.HoraInicio.ToString(@"hh\:mm") - @r.HoraFin.ToString(@"hh\:mm")</p>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <p class="hr-total">
+            Mostrando <strong>@ReservasFiltradas.Count</strong> de <strong>@reservas.Count</strong> reservas
+        </p>
+    }
+
+</div>
+
+@code {
+    private List<ReservaVista> reservas     = new();
+    private bool               cargando     = true;
+    private string?            errorMensaje;
+    private string             filtroTexto  = string.Empty;
+    private DateTime?          filtroFecha  = null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            using var http = new System.Net.Http.HttpClient();
+            var resultado = await http.GetFromJsonAsync<List<ReservaVista>>("http://localhost:5085/api/reservas/usuario/1");
+            reservas = resultado ?? new();
+        }
+        catch
+        {
+            errorMensaje = "No se pudieron cargar las reservas.";
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+
+    private List<ReservaVista> ReservasFiltradas =>
+        reservas
+            .Where(r =>
+                (string.IsNullOrWhiteSpace(filtroTexto) ||
+                 r.CanchaId.ToString().Contains(filtroTexto) ||
+                 r.Estado.Contains(filtroTexto, StringComparison.OrdinalIgnoreCase))
+                &&
+                (filtroFecha == null || r.Fecha.Date == filtroFecha.Value.Date)
+            )
+            .ToList();
+
+    private void LimpiarFiltros()
+    {
+        filtroTexto = string.Empty;
+        filtroFecha = null;
+    }
+
+    public class ReservaVista
+    {
+        public int      Id         { get; set; }
+        public int      CanchaId   { get; set; }
+        public DateTime Fecha      { get; set; }
+        public TimeSpan HoraInicio { get; set; }
+        public TimeSpan HoraFin    { get; set; }
+        public string   Estado     { get; set; } = string.Empty;
+    }
+}
+
+<style>
+    .hr-wrap { max-width: 600px; margin: 2rem auto; padding: 0 1rem; font-family: Segoe UI, sans-serif; }
+    .hr-header { margin-bottom: 1.5rem; }
+    .hr-title { font-size: 22px; font-weight: 600; margin-bottom: 4px; }
+    .hr-subtitle { font-size: 14px; color: #5F5E5A; }
+
+    .hr-toast { padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 1rem; }
+    .hr-toast--error { background: #FCEBEB; color: #A32D2D; border: 0.5px solid #F7C1C1; }
+
+    .hr-loading { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 3rem; color: #5F5E5A; }
+    .hr-spinner { width: 28px; height: 28px; border: 3px solid rgba(24,95,165,.2); border-top-color: #185FA5; border-radius: 50%; animation: spin .7s linear infinite; }
+    @@keyframes spin { to { transform: rotate(360deg); } }
+
+    .hr-empty { text-align: center; padding: 3rem; color: #5F5E5A; }
+    .hr-link { color: #185FA5; font-weight: 500; text-decoration: none; font-size: 14px; }
+
+    .hr-filtros { display: flex; gap: .6rem; flex-wrap: wrap; align-items: center; margin-bottom: 1.25rem; }
+    .hr-search, .hr-date { padding: .45rem .8rem; border: 0.5px solid rgba(0,0,0,.2); border-radius: 8px; font-size: 13px; flex: 1; min-width: 160px; outline: none; }
+    .hr-search:focus, .hr-date:focus { border-color: #185FA5; }
+    .hr-btn-limpiar { padding: .45rem 1rem; background: #F1EFE8; color: #444441; border: none; border-radius: 8px; cursor: pointer; font-size: 13px; }
+    .hr-btn-limpiar:hover { background: #E0DED6; }
+
+    .hr-list { display: flex; flex-direction: column; gap: 1rem; }
+    .hr-card { background: #fff; border: 0.5px solid rgba(0,0,0,.12); border-radius: 12px; padding: 1.25rem; }
+    .hr-card-info { }
+    .hr-badge { font-size: 11px; padding: 3px 8px; border-radius: 20px; font-weight: 500; }
+    .hr-badge--activa { background: #EAF3DE; color: #3B6D11; }
+    .hr-badge--cancelada { background: #F1EFE8; color: #5F5E5A; }
+    .hr-cancha { font-size: 16px; font-weight: 600; margin: 6px 0 4px; }
+    .hr-detalle { font-size: 13px; color: #5F5E5A; margin: 2px 0; }
+
+    .hr-total { text-align: right; color: #5F5E5A; font-size: 12px; margin-top: .75rem; }
+</style>
