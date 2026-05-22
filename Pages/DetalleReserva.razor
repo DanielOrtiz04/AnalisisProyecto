@@ -1,0 +1,97 @@
+@page "/reservas/{id:int}"
+
+@using ReservaCancha.Models
+
+@inject HttpClient Http
+@inject NavigationManager NavManager
+
+<h1>Detalle de reserva</h1>
+
+@if (cargando)
+{
+    <p>Cargando reserva...</p>
+}
+else if (reserva == null)
+{
+    <div class="alert alert-danger">
+        Reserva no encontrada.
+    </div>
+}
+else
+{
+    <div class="card p-4">
+
+        <h3>Información de la reserva</h3>
+
+        <p>
+            <strong>Usuario:</strong>
+            @reserva.NombreUsuario
+        </p>
+
+        <p>
+            <strong>Cancha:</strong>
+            @reserva.Cancha?.Nombre
+        </p>
+
+        <p>
+            <strong>Fecha:</strong>
+            @reserva.Fecha.ToShortDateString()
+        </p>
+
+        <p>
+            <strong>Horario:</strong>
+            @reserva.Horario
+        </p>
+
+        <p>
+            <strong>Estado:</strong>
+            @reserva.Estado
+        </p>
+
+        <button class="btn btn-secondary"
+                @onclick="Volver">
+
+            Regresar
+
+        </button>
+
+    </div>
+}
+
+@code {
+
+    [Parameter]
+    public int Id { get; set; }
+
+    private Reserva? reserva;
+
+    private bool cargando = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await ObtenerReserva();
+    }
+
+    private async Task ObtenerReserva()
+    {
+        try
+        {
+            reserva = await Http.GetFromJsonAsync<Reserva>(
+                $"http://localhost:5085/api/reservas/{Id}"
+            );
+        }
+        catch
+        {
+            reserva = null;
+        }
+        finally
+        {
+            cargando = false;
+        }
+    }
+
+    private void Volver()
+    {
+        NavManager.NavigateTo("/mis-reservas");
+    }
+}
