@@ -4,6 +4,7 @@ using ReservaCancha.Data;
 using ReservaCancha.Models;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace ReservaCancha.Controllers
 {
@@ -12,13 +13,13 @@ namespace ReservaCancha.Controllers
     public class UsuariosController : ControllerBase
     {
         private readonly AppDbContext _context;
+        private const int MaxIntentosFallidos = 3;
 
         public UsuariosController(AppDbContext context)
         {
             _context = context;
         }
 
-        // POST api/usuarios/registrar
         [HttpPost("registrar")]
         public async Task<IActionResult> Registrar([FromBody] RegistroRequest request)
         {
@@ -28,6 +29,11 @@ namespace ReservaCancha.Controllers
                 string.IsNullOrWhiteSpace(request.Password))
             {
                 return BadRequest(new { mensaje = "Todos los campos son requeridos." });
+            }
+
+            if (!ContrasenaSegura(request.Password))
+            {
+                return BadRequest(new { mensaje = "La contraseña debe tener mínimo 8 caracteres, una mayúscula y un número." });
             }
 
             bool correoExiste = await _context.Usuarios
@@ -48,6 +54,8 @@ namespace ReservaCancha.Controllers
                 PasswordHash = passwordHash,
                 FechaRegistro = DateTime.UtcNow,
                 Activo = true,
+                IntentosFallidos = 0,
+                Bloqueado = false,
             };
 
             _context.Usuarios.Add(nuevoUsuario);
@@ -56,7 +64,6 @@ namespace ReservaCancha.Controllers
             return Ok(new { mensaje = "Usuario registrado exitosamente.", id = nuevoUsuario.Id });
         }
 
-        
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequest request)
         {
@@ -65,21 +72,47 @@ namespace ReservaCancha.Controllers
                 return BadRequest(new { mensaje = "Correo y contraseña son requeridos." });
             }
 
-            string hashIngresado = HashPassword(request.Password);
             string correoNormalizado = request.Correo.Trim().ToLower();
 
             var usuario = await _context.Usuarios
-                .FirstOrDefaultAsync(u => u.Correo == correoNormalizado && u.PasswordHash == hashIngresado);
+                .FirstOrDefaultAsync(u => u.Correo == correoNormalizado);
 
             if (usuario == null)
             {
                 return Unauthorized(new { mensaje = "Correo o contraseña incorrectos." });
             }
 
+            if (usuario.Bloqueado)
+            {
+                return Unauthorized(new { mensaje = "Cuenta bloqueada por demasiados intentos fallidos. Contacta al administrador." });
+            }
+
+            string hashIngresado = HashPassword(request.Password);
+
+            if (usuario.PasswordHash != hashIngresado)
+            {
+                usuario.IntentosFallidos++;
+
+                if (usuario.IntentosFallidos >= MaxIntentosFallidos)
+                {
+                    usuario.Bloqueado = true;
+                    usuario.FechaBloqueo = DateTime.UtcNow;
+                    await _context.SaveChangesAsync();
+                    return Unauthorized(new { mensaje = "Cuenta bloqueada por 3 intentos fallidos. Contacta al administrador." });
+                }
+
+                await _context.SaveChangesAsync();
+                int intentosRestantes = MaxIntentosFallidos - usuario.IntentosFallidos;
+                return Unauthorized(new { mensaje = $"Contraseña incorrecta. Te quedan {intentosRestantes} intento(s)." });
+            }
+
+            usuario.IntentosFallidos = 0;
+            usuario.Bloqueado = false;
+            await _context.SaveChangesAsync();
+
             return Ok(new { mensaje = "Acceso exitoso", usuarioId = usuario.Id, nombre = usuario.Nombre });
         }
 
-        
         [HttpGet("{id}/perfil")]
         public async Task<IActionResult> GetPerfil(int id)
         {
@@ -99,6 +132,7 @@ namespace ReservaCancha.Controllers
             });
         }
 
+        // PUT api/usuarios/{id}/perfil
         [HttpPut("{id}/perfil")]
         public async Task<IActionResult> ActualizarPerfil(int id, [FromBody] ActualizarPerfilRequest request)
         {
@@ -119,6 +153,31 @@ namespace ReservaCancha.Controllers
             await _context.SaveChangesAsync();
 
             return Ok(new { mensaje = "Perfil actualizado correctamente." });
+        }
+
+        [HttpPost("{id}/desbloquear")]
+        public async Task<IActionResult> Desbloquear(int id)
+        {
+            var usuario = await _context.Usuarios.FindAsync(id);
+
+            if (usuario == null)
+                return NotFound(new { mensaje = "Usuario no encontrado." });
+
+            usuario.Bloqueado = false;
+            usuario.IntentosFallidos = 0;
+            usuario.FechaBloqueo = null;
+
+            await _context.SaveChangesAsync();
+
+            return Ok(new { mensaje = "Cuenta desbloqueada correctamente." });
+        }
+
+        private static bool ContrasenaSegura(string password)
+        {
+            if (password.Length < 8) return false;
+            if (!Regex.IsMatch(password, @"[A-Z]")) return false;
+            if (!Regex.IsMatch(password, @"[0-9]")) return false;
+            return true;
         }
 
         private static string HashPassword(string password)
@@ -142,6 +201,7 @@ namespace ReservaCancha.Controllers
         public string Correo { get; set; } = string.Empty;
         public string Password { get; set; } = string.Empty;
     }
+
     public class ActualizarPerfilRequest
     {
         public string Nombre { get; set; } = string.Empty;
