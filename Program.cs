@@ -13,7 +13,6 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 builder.Services.AddScoped<NotificacionReservaService>();
 
-// RNF-1: Configurar política de CORS segura
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("PoliticaSegura", policy =>
@@ -24,11 +23,12 @@ builder.Services.AddCors(options =>
     });
 });
 
-//R2
 builder.Services.AddAntiforgery(options =>
 {
     options.HeaderName = "X-CSRF-TOKEN";
 });
+
+builder.Services.AddHealthChecks();
 
 var app = builder.Build();
 
@@ -43,6 +43,8 @@ app.UseStaticFiles();
 app.UseRouting();
 
 app.UseCors("PoliticaSegura");
+
+app.MapHealthChecks("/health");
 
 app.MapControllers();
 app.MapBlazorHub();
