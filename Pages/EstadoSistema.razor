@@ -1,0 +1,67 @@
+@page "/estado-sistema"
+@inject HttpClient Http
+@using System.Net.Http
+
+@* RNF-2: Frontend - Informar al usuario cuando el sistema no esté disponible *@
+
+<h3>Estado del Sistema</h3>
+
+@if (verificando)
+{
+    <div class="d-flex align-items-center gap-2 mt-3">
+        <div class="spinner-border spinner-border-sm text-secondary" role="status"></div>
+        <span>Verificando disponibilidad del sistema...</span>
+    </div>
+}
+else if (!sistemaDisponible)
+{
+    <div class="alert alert-danger mt-3" role="alert">
+        <h4 class="alert-heading"> Sistema no disponible</h4>
+        <p>El sistema se encuentra temporalmente fuera de servicio.</p>
+        <p>Por favor, intente nuevamente en unos minutos.</p>
+        <hr />
+        <button class="btn btn-outline-danger" @onclick="Verificar"> Reintentar</button>
+    </div>
+}
+else
+{
+    <div class="alert alert-success mt-3" role="alert">
+        <h4 class="alert-heading"> Sistema disponible</h4>
+        <p>El sistema está funcionando correctamente. Puede realizar sus reservas con normalidad.</p>
+        <small class="text-muted">Última verificación: @ultimaVerificacion?.ToString("dd/MM/yyyy HH:mm:ss")</small>
+    </div>
+}
+
+@code {
+    private bool verificando = true;
+    private bool sistemaDisponible = false;
+    private DateTime? ultimaVerificacion;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await Verificar();
+    }
+
+    private async Task Verificar()
+    {
+        verificando = true;
+        sistemaDisponible = false;
+        StateHasChanged();
+
+        try
+        {
+            var respuesta = await Http.GetAsync("api/health");
+            sistemaDisponible = respuesta.IsSuccessStatusCode;
+            ultimaVerificacion = DateTime.Now;
+        }
+        catch (Exception)
+        {
+            sistemaDisponible = false;
+        }
+        finally
+        {
+            verificando = false;
+            StateHasChanged();
+        }
+    }
+}
