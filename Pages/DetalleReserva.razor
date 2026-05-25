@@ -24,8 +24,8 @@ else
         <h3>Información de la reserva</h3>
 
         <p>
-            <strong>Usuario:</strong>
-            @reserva.NombreUsuario
+            <strong>Usuario ID:</strong>
+            @reserva.UsuarioId
         </p>
 
         <p>
@@ -40,7 +40,7 @@ else
 
         <p>
             <strong>Horario:</strong>
-            @reserva.Horario
+            @reserva.HoraInicio.ToString(@"hh\:mm") - @reserva.HoraFin.ToString(@"hh\:mm")
         </p>
 
         <p>
@@ -48,11 +48,8 @@ else
             @reserva.Estado
         </p>
 
-        <button class="btn btn-secondary"
-                @onclick="Volver">
-
+        <button class="btn btn-secondary" @onclick="Volver">
             Regresar
-
         </button>
 
     </div>
@@ -64,7 +61,6 @@ else
     public int Id { get; set; }
 
     private Reserva? reserva;
-
     private bool cargando = true;
 
     protected override async Task OnInitializedAsync()
@@ -92,6 +88,6 @@ else
 
     private void Volver()
     {
-        NavManager.NavigateTo("/mis-reservas");
+        NavManager.NavigateTo("/historial");
     }
 }

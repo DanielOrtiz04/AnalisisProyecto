@@ -1,62 +1,175 @@
-<div class="top-row ps-3 navbar navbar-dark">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="">ReservaCancha</a>
-        <button title="Navigation menu" class="navbar-toggler" @onclick="ToggleNavMenu">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-    </div>
-</div>
+@using ReservaCancha.Services
+@inject SesionService Sesion
+@inject NavigationManager NavManager
+@implements IDisposable
 
-<div class="@NavMenuCssClass nav-scrollable" @onclick="ToggleNavMenu">
-    <nav class="flex-column">
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
-                <span class="oi oi-home" aria-hidden="true"></span> Inicio
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="registro">
-                <span class="oi oi-person" aria-hidden="true"></span> Registro
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="login">
-                <span class="oi oi-account-login" aria-hidden="true"></span> Iniciar sesion
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="canchas">
-                <span class="oi oi-map-marker" aria-hidden="true"></span> Canchas
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="filtro-canchas">
-                <span class="oi oi-magnifying-glass" aria-hidden="true"></span> Filtrar Canchas
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="perfil/1">
-                <span class="oi oi-person" aria-hidden="true"></span> Mi Perfil
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="mis-reservas">
-                <span class="oi oi-calendar" aria-hidden="true"></span> Mis Reservas
-            </NavLink>
-        </div>
-        <div class="nav-item px-3">
-            <NavLink class="nav-link" href="historial">
-                <span class="oi oi-list" aria-hidden="true"></span> Historial
-            </NavLink>
-        </div>
+<div class="sidebar-wrap">
+    <div class="sidebar-brand">
+        <a href="/">⚽ ReservaCancha</a>
+    </div>
+
+    <nav class="sidebar-nav">
+        <a class="nav-lnk @Activo("")" href="/">🏠 Inicio</a>
+        <a class="nav-lnk" href="/canchas">📍 Canchas</a>
+        <a class="nav-lnk" href="/filtro-canchas">🔍 Filtrar Canchas</a>
+
+        @if (Sesion.Autenticado)
+        {
+            <div class="nav-divider"></div>
+            <div class="nav-user">
+                <span class="nav-user-name">@Sesion.Nombre</span>
+                @if (Sesion.EsAdmin)
+                {
+                    <span class="nav-badge-admin">Admin</span>
+                }
+            </div>
+            <a class="nav-lnk" href="/perfil/@Sesion.UsuarioId">👤 Mi Perfil</a>
+            <a class="nav-lnk" href="/mis-reservas">📅 Mis Reservas</a>
+            <a class="nav-lnk" href="/historial">📋 Historial</a>
+            <button class="nav-logout" @onclick="CerrarSesion">🚪 Cerrar sesión</button>
+        }
+        else
+        {
+            <div class="nav-divider"></div>
+            <a class="nav-lnk nav-lnk--accent" href="/login">→ Iniciar sesión</a>
+            <a class="nav-lnk" href="/registro">✏ Registrarse</a>
+        }
     </nav>
 </div>
 
 @code {
-    private bool collapseNavMenu = true;
-    private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
-    private void ToggleNavMenu()
+    protected override void OnInitialized()
     {
-        collapseNavMenu = !collapseNavMenu;
+        Sesion.OnCambio += ActualizarUI;
+    }
+
+    private void ActualizarUI()
+    {
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void CerrarSesion()
+    {
+        Sesion.CerrarSesion();
+        NavManager.NavigateTo("/login");
+    }
+
+    private string Activo(string href)
+    {
+        var uri = NavManager.ToBaseRelativePath(NavManager.Uri);
+        return (href == "" && uri == "") || (href != "" && uri.StartsWith(href)) ? "nav-lnk--active" : "";
+    }
+
+    public void Dispose()
+    {
+        Sesion.OnCambio -= ActualizarUI;
     }
 }
+
+<style>
+    .sidebar-wrap {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        background: linear-gradient(180deg, #1a1f3a 0%, #2d1b69 100%);
+        color: #fff;
+        font-family: Segoe UI, sans-serif;
+    }
+
+    .sidebar-brand {
+        padding: 1.25rem 1.25rem 1rem;
+        border-bottom: 1px solid rgba(255,255,255,.1);
+    }
+
+    .sidebar-brand a {
+        color: #fff;
+        text-decoration: none;
+        font-size: 1.1rem;
+        font-weight: 700;
+        letter-spacing: .3px;
+    }
+
+    .sidebar-nav {
+        display: flex;
+        flex-direction: column;
+        padding: .75rem 0;
+        gap: 2px;
+    }
+
+    .nav-lnk {
+        display: block;
+        padding: .65rem 1.25rem;
+        color: rgba(255,255,255,.75);
+        text-decoration: none;
+        font-size: .875rem;
+        border-radius: 0;
+        transition: background .15s, color .15s;
+        border-left: 3px solid transparent;
+    }
+
+    .nav-lnk:hover {
+        background: rgba(255,255,255,.1);
+        color: #fff;
+    }
+
+    .nav-lnk--active {
+        background: rgba(255,255,255,.15);
+        color: #fff;
+        border-left-color: #7c83f5;
+    }
+
+    .nav-lnk--accent {
+        color: #a5b4fc;
+        font-weight: 600;
+    }
+
+    .nav-divider {
+        height: 1px;
+        background: rgba(255,255,255,.1);
+        margin: .5rem 1.25rem;
+    }
+
+    .nav-user {
+        padding: .4rem 1.25rem .6rem;
+        display: flex;
+        align-items: center;
+        gap: .5rem;
+    }
+
+    .nav-user-name {
+        font-size: .78rem;
+        color: rgba(255,255,255,.55);
+        font-weight: 500;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 120px;
+    }
+
+    .nav-badge-admin {
+        background: #f59e0b;
+        color: #000;
+        font-size: .65rem;
+        font-weight: 700;
+        padding: 1px 6px;
+        border-radius: 10px;
+    }
+
+    .nav-logout {
+        margin: .5rem 1.25rem 0;
+        padding: .55rem .75rem;
+        background: rgba(220,50,50,.2);
+        color: #fca5a5;
+        border: 1px solid rgba(220,50,50,.3);
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: .8rem;
+        text-align: left;
+        transition: background .15s;
+    }
+
+    .nav-logout:hover {
+        background: rgba(220,50,50,.35);
+        color: #fff;
+    }
+</style>

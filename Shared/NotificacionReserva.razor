@@ -9,7 +9,7 @@
 }
 
 @code {
-    [Parameter] public NotificacionReserva? Notificacion { get; set; }
+    [Parameter] public ReservaCancha.Services.NotificacionReserva? Notificacion { get; set; }
 
     private string TipoCss => Notificacion?.Tipo switch
     {

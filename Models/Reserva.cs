@@ -4,7 +4,9 @@ namespace ReservaCancha.Models
     {
         public int Id { get; set; }
 
-        public string NombreUsuario { get; set; } = string.Empty;
+        public int UsuarioId { get; set; }
+
+        public Usuario? Usuario { get; set; }
 
         public int CanchaId { get; set; }
 
@@ -12,7 +14,9 @@ namespace ReservaCancha.Models
 
         public DateTime Fecha { get; set; }
 
-        public string Horario { get; set; } = string.Empty;
+        public TimeSpan HoraInicio { get; set; }
+
+        public TimeSpan HoraFin { get; set; }
 
         public string Estado { get; set; } = "Pendiente";
     }

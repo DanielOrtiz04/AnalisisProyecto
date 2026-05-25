@@ -1,134 +1,105 @@
 @page "/perfil/{UsuarioId:int}"
-@using ReservaCancha.Models
+@using ReservaCancha.Services
 @inject HttpClient Http
-@inject NavigationManager NavManager
+@inject SesionService Sesion
 
 <PageTitle>Mi Perfil | ReservaCancha</PageTitle>
 
-<h1>Mi Perfil</h1>
-
-@if (cargando)
-{
-    <p>Cargando perfil...</p>
-}
-else if (errorMensaje != null)
-{
-    <div class="alert alert-danger">@errorMensaje</div>
-}
-else
-{
-    <div class="card p-4 mb-4">
-        <h4>Información personal</h4>
-        <hr />
-
-        <div class="mb-3">
-            <label class="form-label"><strong>Nombre</strong></label>
-            <input class="form-control" @bind="nombre" />
+<div class="pf-wrap">
+    <div class="pf-header">
+        <div class="pf-avatar">@(string.IsNullOrEmpty(nombre) ? "?" : nombre[0].ToString().ToUpper())</div>
+        <div>
+            <h1 class="pf-title">Mi Perfil</h1>
+            <p class="pf-sub">@correo @(Sesion.EsAdmin ? "· Admin" : "")</p>
         </div>
-
-        <div class="mb-3">
-            <label class="form-label"><strong>Correo</strong></label>
-            <input class="form-control" value="@correo" disabled />
-            <small class="text-muted">El correo no se puede modificar.</small>
-        </div>
-
-        <div class="mb-3">
-            <label class="form-label"><strong>Teléfono</strong></label>
-            <input class="form-control" @bind="telefono" />
-        </div>
-
-        <div class="mb-3">
-            <label class="form-label"><strong>Fecha de registro</strong></label>
-            <input class="form-control" value="@fechaRegistro.ToString("dd/MM/yyyy")" disabled />
-        </div>
-
-        @if (mensajeExito != null)
-        {
-            <div class="alert alert-success">@mensajeExito</div>
-        }
-
-        @if (mensajeError != null)
-        {
-            <div class="alert alert-danger">@mensajeError</div>
-        }
-
-        <button class="btn btn-primary" @onclick="GuardarCambios">
-             Guardar cambios
-        </button>
-
     </div>
-}
+
+    @if (cargando)
+    {
+        <div class="pf-card">
+            @for (int i = 0; i < 3; i++) { <div class="sk sk-line"></div> }
+        </div>
+    }
+    else if (errorMensaje != null)
+    {
+        <div class="pf-alert pf-alert--err">@errorMensaje</div>
+    }
+    else
+    {
+        <div class="pf-card">
+            @if (mensajeExito != null)
+            { <div class="pf-alert pf-alert--ok">✅ @mensajeExito</div> }
+            @if (mensajeError != null)
+            { <div class="pf-alert pf-alert--err">@mensajeError</div> }
+
+            <div class="pf-field">
+                <label>Nombre</label>
+                <input class="pf-input" @bind="nombre" placeholder="Tu nombre" />
+            </div>
+            <div class="pf-field">
+                <label>Correo</label>
+                <input class="pf-input pf-input--disabled" value="@correo" disabled />
+                <span class="pf-hint">El correo no se puede modificar</span>
+            </div>
+            <div class="pf-field">
+                <label>Teléfono</label>
+                <input class="pf-input" @bind="telefono" placeholder="Tu teléfono" />
+            </div>
+            <div class="pf-field">
+                <label>Fecha de registro</label>
+                <input class="pf-input pf-input--disabled" value="@fechaRegistro.ToString("dd/MM/yyyy")" disabled />
+            </div>
+
+            <button class="pf-btn" @onclick="Guardar" disabled="@guardando">
+                @if (guardando) { <span class="pf-spinner"></span> }
+                else { <span>Guardar cambios</span> }
+            </button>
+        </div>
+    }
+</div>
 
 @code {
-
     [Parameter] public int UsuarioId { get; set; }
 
-    private string nombre = string.Empty;
-    private string correo = string.Empty;
-    private string telefono = string.Empty;
+    private string   nombre        = string.Empty;
+    private string   correo        = string.Empty;
+    private string   telefono      = string.Empty;
     private DateTime fechaRegistro;
-
-    private bool cargando = true;
-    private string? errorMensaje;
-    private string? mensajeExito;
-    private string? mensajeError;
+    private bool     cargando      = true;
+    private bool     guardando     = false;
+    private string?  errorMensaje;
+    private string?  mensajeExito;
+    private string?  mensajeError;
 
     protected override async Task OnInitializedAsync()
     {
         try
         {
-            var resultado = await Http.GetFromJsonAsync<PerfilDto>(
-                $"http://localhost:5085/api/usuarios/{UsuarioId}/perfil"
-            );
-
-            if (resultado != null)
-            {
-                nombre = resultado.Nombre;
-                correo = resultado.Correo;
-                telefono = resultado.Telefono;
-                fechaRegistro = resultado.FechaRegistro;
-            }
+            var r = await Http.GetFromJsonAsync<PerfilDto>($"http://localhost:5085/api/usuarios/{UsuarioId}/perfil");
+            if (r != null) { nombre = r.Nombre; correo = r.Correo; telefono = r.Telefono; fechaRegistro = r.FechaRegistro; }
         }
-        catch
-        {
-            errorMensaje = "No se pudo cargar el perfil.";
-        }
-        finally
-        {
-            cargando = false;
-        }
+        catch { errorMensaje = "No se pudo cargar el perfil."; }
+        finally { cargando = false; }
     }
 
-    private async Task GuardarCambios()
+    private async Task Guardar()
     {
-        mensajeExito = null;
-        mensajeError = null;
-
+        mensajeExito = mensajeError = null;
         if (string.IsNullOrWhiteSpace(nombre) || string.IsNullOrWhiteSpace(telefono))
-        {
-            mensajeError = "Nombre y teléfono son requeridos.";
-            return;
-        }
-
+        { mensajeError = "Nombre y teléfono son requeridos."; return; }
+        guardando = true;
         try
         {
-            var response = await Http.PutAsJsonAsync(
-                $"http://localhost:5085/api/usuarios/{UsuarioId}/perfil",
-                new { Nombre = nombre, Telefono = telefono }
-            );
-
-            if (response.IsSuccessStatusCode)
-                mensajeExito = "Perfil actualizado correctamente.";
-            else
-                mensajeError = "No se pudo actualizar el perfil.";
+            var r = await Http.PutAsJsonAsync($"http://localhost:5085/api/usuarios/{UsuarioId}/perfil",
+                new { Nombre = nombre, Telefono = telefono });
+            if (r.IsSuccessStatusCode) mensajeExito = "Perfil actualizado correctamente.";
+            else mensajeError = "No se pudo actualizar el perfil.";
         }
-        catch
-        {
-            mensajeError = "Error al conectar con el servidor.";
-        }
+        catch { mensajeError = "Error al conectar con el servidor."; }
+        finally { guardando = false; }
     }
 
-    private class PerfilDto
+    class PerfilDto
     {
         public int Id { get; set; }
         public string Nombre { get; set; } = string.Empty;
@@ -138,3 +109,29 @@ else
         public bool Activo { get; set; }
     }
 }
+
+<style>
+    .pf-wrap  { max-width: 520px; margin: 2rem auto; padding: 0 1.25rem; font-family: Segoe UI, sans-serif; }
+    .pf-header { display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem; }
+    .pf-avatar { width: 56px; height: 56px; border-radius: 50%; background: linear-gradient(135deg,#6366f1,#8b5cf6); color: #fff; font-size: 1.4rem; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .pf-title { font-size: 1.4rem; font-weight: 700; margin: 0 0 2px; }
+    .pf-sub   { font-size: .82rem; color: #6b7280; margin: 0; }
+    .pf-card  { background: #fff; border: 1px solid #e5e7eb; border-radius: 16px; padding: 1.5rem; box-shadow: 0 2px 8px rgba(0,0,0,.06); display: flex; flex-direction: column; gap: 1rem; }
+    .pf-alert { padding: 10px 14px; border-radius: 8px; font-size: 13px; }
+    .pf-alert--ok  { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+    .pf-alert--err { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+    .pf-field { display: flex; flex-direction: column; gap: 5px; }
+    .pf-field label { font-size: .78rem; font-weight: 600; color: #374151; text-transform: uppercase; letter-spacing: .4px; }
+    .pf-input { padding: 10px 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: .9rem; outline: none; box-sizing: border-box; width: 100%; transition: border .15s; }
+    .pf-input:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,.15); }
+    .pf-input--disabled { background: #f8fafc; color: #9ca3af; cursor: not-allowed; }
+    .pf-hint  { font-size: .75rem; color: #9ca3af; }
+    .pf-btn   { padding: 11px; background: #4f46e5; color: #fff; border: none; border-radius: 10px; font-weight: 600; font-size: .9rem; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: background .15s; margin-top: .25rem; }
+    .pf-btn:hover:not(:disabled) { background: #4338ca; }
+    .pf-btn:disabled { background: #a5b4fc; cursor: not-allowed; }
+    .pf-spinner { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,.4); border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; }
+    .sk { border-radius: 6px; height: 40px; background: linear-gradient(90deg,#f0f0f0 25%,#e0e0e0 50%,#f0f0f0 75%); background-size: 200% 100%; animation: shimmer 1.4s ease-in-out infinite; margin-bottom: .75rem; }
+    .sk-line { height: 44px; }
+    @@keyframes spin { to { transform: rotate(360deg); } }
+    @@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+</style>

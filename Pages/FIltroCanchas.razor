@@ -1,129 +1,137 @@
 @page "/filtro-canchas"
 @using ReservaCancha.Models
+@using ReservaCancha.Services
 @inject NavigationManager NavManager
 @inject HttpClient Http
+@inject SesionService Sesion
 
 <PageTitle>Filtrar Canchas | ReservaCancha</PageTitle>
 
-<h1>Buscar y Filtrar Canchas</h1>
-
-<div class="card p-3 mb-4">
-    <div class="row g-3">
-
-        <div class="col-md-5">
-            <label class="form-label"><strong>Buscar por tipo</strong></label>
-            <input class="form-control"
-                   placeholder="Ej: Futbol, Basquetbol, Voleibol..."
-                   @bind="filtroTipo"
-                   @bind:event="oninput" />
-        </div>
-
-        <div class="col-md-4">
-            <label class="form-label"><strong>Disponibilidad</strong></label>
-            <select class="form-select" @bind="filtroDisponible">
-                <option value="">Todas</option>
-                <option value="true">Solo disponibles</option>
-                <option value="false">No disponibles</option>
-            </select>
-        </div>
-
-        <div class="col-md-3 d-flex align-items-end">
-            <button class="btn btn-primary w-100" @onclick="Buscar">
-                🔍 Filtrar
-            </button>
-        </div>
-
+<div class="fc-wrap">
+    <div class="fc-header">
+        <h1 class="fc-title">Buscar canchas</h1>
+        <p class="fc-sub">Filtra por tipo o disponibilidad</p>
     </div>
-</div>
 
-@if (cargando)
-{
-    <p>Cargando canchas...</p>
-}
-else if (errorMensaje != null)
-{
-    <div class="alert alert-danger">@errorMensaje</div>
-}
-else if (resultados.Count == 0)
-{
-    <div class="alert alert-warning">No se encontraron canchas con los filtros aplicados.</div>
-}
-else
-{
-    <p class="text-muted">@resultados.Count cancha(s) encontrada(s)</p>
+    <div class="fc-filters">
+        <input class="fc-input" placeholder="Tipo: Futbol, Basquetbol…"
+               @bind="filtroTipo" @bind:event="oninput" @onkeydown="OnKey" />
+        <select class="fc-select" @bind="filtroDisponible">
+            <option value="">Todas</option>
+            <option value="true">Solo disponibles</option>
+            <option value="false">No disponibles</option>
+        </select>
+        <button class="fc-btn" @onclick="Buscar">🔍 Filtrar</button>
+    </div>
 
-    @foreach (var cancha in resultados)
+    @if (!string.IsNullOrEmpty(errorMensaje))
     {
-        <div class="card mb-3 p-3">
-            <h4>@cancha.Nombre</h4>
-            <p><strong>Tipo:</strong> @cancha.Tipo</p>
-            <p><strong>Descripción:</strong> @cancha.Descripcion</p>
-            <p><strong>Precio:</strong> Q.@cancha.Precio</p>
-            <p>
-                <strong>Estado:</strong>
-                @if (cancha.Disponible)
-                {
-                    <span class="badge bg-success">Disponible</span>
-                }
-                else
-                {
-                    <span class="badge bg-danger">No disponible</span>
-                }
-            </p>
-            @if (cancha.Disponible)
+        <div class="fc-alert">@errorMensaje</div>
+    }
+
+    @if (cargando)
+    {
+        <div class="fc-grid">
+            @for (int i = 0; i < 3; i++)
             {
-                <button class="btn btn-success"
-                        @onclick="() => Reservar(cancha.Id)">
-                    Reservar
-                </button>
+                <div class="fc-card fc-card--sk">
+                    <div class="sk sk-t"></div><div class="sk sk-l"></div><div class="sk sk-l sk-s"></div><div class="sk sk-b"></div>
+                </div>
             }
         </div>
     }
-}
+    else if (resultados.Count == 0)
+    {
+        <div class="fc-empty">No se encontraron canchas con esos filtros.</div>
+    }
+    else
+    {
+        <p class="fc-count">@resultados.Count cancha(s) encontrada(s)</p>
+        <div class="fc-grid">
+            @foreach (var c in resultados)
+            {
+                <div class="fc-card">
+                    <div class="fc-card-top">
+                        <span class="fc-tipo">@c.Tipo</span>
+                        <span class="fc-est @(c.Disponible ? "fc-est--ok" : "fc-est--off")">
+                            @(c.Disponible ? "Disponible" : "No disponible")
+                        </span>
+                    </div>
+                    <h2 class="fc-nombre">@c.Nombre</h2>
+                    <p class="fc-desc">@c.Descripcion</p>
+                    <p class="fc-precio">Q @c.Precio / hora</p>
+                    @if (c.Disponible)
+                    {
+                        <button class="fc-reservar" @onclick="() => Reservar(c.Id)">📅 Reservar</button>
+                    }
+                </div>
+            }
+        </div>
+    }
+</div>
 
 @code {
-
     private string filtroTipo = string.Empty;
     private string filtroDisponible = string.Empty;
     private List<Cancha> resultados = new();
     private bool cargando = false;
     private string? errorMensaje;
 
-    protected override async Task OnInitializedAsync()
-    {
-        await Buscar();
-    }
+    protected override async Task OnInitializedAsync() => await Buscar();
+
+    private async Task OnKey(KeyboardEventArgs e) { if (e.Key == "Enter") await Buscar(); }
 
     private async Task Buscar()
     {
-        cargando = true;
-        errorMensaje = null;
-
+        cargando = true; errorMensaje = null;
         try
         {
             var url = "http://localhost:5085/api/canchas/filtrar?";
-
             if (!string.IsNullOrWhiteSpace(filtroTipo))
                 url += $"tipo={Uri.EscapeDataString(filtroTipo)}&";
-
             if (!string.IsNullOrWhiteSpace(filtroDisponible))
                 url += $"disponible={filtroDisponible}";
-
-            var resultado = await Http.GetFromJsonAsync<List<Cancha>>(url);
-            resultados = resultado ?? new();
+            resultados = await Http.GetFromJsonAsync<List<Cancha>>(url) ?? new();
         }
-        catch
-        {
-            errorMensaje = "No se pudo conectar al servidor. Intenta de nuevo.";
-        }
-        finally
-        {
-            cargando = false;
-        }
+        catch { errorMensaje = "No se pudo conectar al servidor."; }
+        finally { cargando = false; }
     }
 
-    private void Reservar(int canchaId)
+    private void Reservar(int id)
     {
-        NavManager.NavigateTo($"/reservar/{canchaId}");
+        if (!Sesion.Autenticado) { NavManager.NavigateTo("/login"); return; }
+        NavManager.NavigateTo($"/reservar/{id}");
     }
 }
+
+<style>
+    .fc-wrap  { max-width: 900px; margin: 2rem auto; padding: 0 1.25rem; font-family: Segoe UI, sans-serif; }
+    .fc-header { margin-bottom: 1.25rem; }
+    .fc-title { font-size: 1.6rem; font-weight: 700; margin: 0 0 4px; }
+    .fc-sub   { font-size: .875rem; color: #6b7280; margin: 0; }
+    .fc-filters { display: flex; gap: .75rem; flex-wrap: wrap; margin-bottom: 1.5rem; }
+    .fc-input  { flex: 1; min-width: 180px; padding: 10px 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: .875rem; outline: none; }
+    .fc-input:focus { border-color: #6366f1; }
+    .fc-select { padding: 10px 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: .875rem; outline: none; background: #fff; }
+    .fc-btn    { padding: 10px 20px; background: #4f46e5; color: #fff; border: none; border-radius: 8px; font-weight: 600; font-size: .875rem; cursor: pointer; white-space: nowrap; }
+    .fc-btn:hover { background: #4338ca; }
+    .fc-alert  { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; padding: 10px 14px; border-radius: 8px; margin-bottom: 1rem; font-size: 13px; }
+    .fc-empty  { text-align: center; padding: 3rem; color: #9ca3af; }
+    .fc-count  { font-size: .82rem; color: #6b7280; margin-bottom: .75rem; }
+    .fc-grid   { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; }
+    .fc-card   { background: #fff; border: 1px solid #e5e7eb; border-radius: 16px; padding: 1.25rem; display: flex; flex-direction: column; gap: .5rem; box-shadow: 0 1px 4px rgba(0,0,0,.05); }
+    .fc-card-top { display: flex; justify-content: space-between; align-items: center; }
+    .fc-tipo   { font-size: .72rem; font-weight: 700; text-transform: uppercase; color: #6366f1; background: #eef2ff; padding: 2px 8px; border-radius: 20px; }
+    .fc-est    { font-size: .72rem; font-weight: 600; padding: 2px 8px; border-radius: 20px; }
+    .fc-est--ok  { background: #dcfce7; color: #166534; }
+    .fc-est--off { background: #fee2e2; color: #991b1b; }
+    .fc-nombre { font-size: 1.05rem; font-weight: 700; margin: 4px 0 0; color: #111827; }
+    .fc-desc   { font-size: .82rem; color: #6b7280; margin: 0; flex: 1; }
+    .fc-precio { font-size: .95rem; font-weight: 600; color: #059669; margin: 4px 0 0; }
+    .fc-reservar { padding: 9px; background: #059669; color: #fff; border: none; border-radius: 8px; font-size: .82rem; font-weight: 600; cursor: pointer; margin-top: .25rem; }
+    .fc-reservar:hover { background: #047857; }
+    .fc-card--sk { pointer-events: none; }
+    .sk { border-radius: 6px; margin-bottom: 8px; background: linear-gradient(90deg,#f0f0f0 25%,#e0e0e0 50%,#f0f0f0 75%); background-size: 200% 100%; animation: shimmer 1.4s ease-in-out infinite; }
+    .sk-t { height: 18px; width: 55%; } .sk-l { height: 13px; width: 80%; } .sk-s { width: 40%; } .sk-b { height: 34px; border-radius: 8px; }
+    @@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+</style>

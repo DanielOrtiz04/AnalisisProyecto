@@ -1,35 +1,31 @@
 @page "/mis-reservas"
 @using ReservaCancha.Models
+@using ReservaCancha.Services
 @inject NavigationManager NavManager
+@inject SesionService Sesion
 
 <PageTitle>Mis Reservas | ReservaCancha</PageTitle>
 
 <div class="cr-wrap">
-
     <div class="cr-header">
         <h1 class="cr-title">Mis Reservas</h1>
-        <p class="cr-subtitle">Administra tus reservas activas</p>
+        <p class="cr-sub">Administra tus reservas activas</p>
     </div>
 
     @if (mensajeExito != null)
-    {
-        <div class="cr-toast cr-toast--success">
-            @mensajeExito
-        </div>
-    }
-
+    { <div class="cr-toast cr-toast--ok">✅ @mensajeExito</div> }
     @if (errorMensaje != null)
-    {
-        <div class="cr-toast cr-toast--error">
-            @errorMensaje
-        </div>
-    }
+    { <div class="cr-toast cr-toast--err">@errorMensaje</div> }
 
     @if (cargando)
     {
-        <div class="cr-loading">
-            <div class="cr-spinner"></div>
-            <p>Cargando reservas...</p>
+        <div class="cr-grid">
+            @for (int i = 0; i < 3; i++)
+            {
+                <div class="cr-card cr-card--sk">
+                    <div class="sk sk-badge"></div><div class="sk sk-t"></div><div class="sk sk-l"></div><div class="sk sk-l sk-s"></div>
+                </div>
+            }
         </div>
     }
     else if (reservas.Count == 0)
@@ -41,42 +37,37 @@
     }
     else
     {
-        <div class="cr-list">
-            @foreach (var reserva in reservas)
+        <div class="cr-grid">
+            @foreach (var r in reservas)
             {
                 <div class="cr-card">
-                    <div class="cr-card-info">
-                        <span class="cr-badge @(reserva.Estado == "Confirmada" ? "cr-badge--activa" : "cr-badge--cancelada")">
-                            @reserva.Estado
-                        </span>
-                        <h2 class="cr-cancha">Cancha #@reserva.CanchaId</h2>
-                        <p class="cr-detalle">Fecha: @reserva.Fecha.ToString("dd/MM/yyyy")</p>
-                        <p class="cr-detalle">Horario: @reserva.HoraInicio.ToString(@"hh\:mm") - @reserva.HoraFin.ToString(@"hh\:mm")</p>
+                    <div class="cr-top">
+                        <span class="cr-badge @(r.Estado == "Confirmada" ? "cr-badge--ok" : "cr-badge--off")">@r.Estado</span>
+                        <span class="cr-fecha">@r.Fecha.ToString("dd/MM/yyyy")</span>
                     </div>
+                    <h2 class="cr-nombre">Cancha #@r.CanchaId</h2>
+                    <p class="cr-horario">🕐 @r.HoraInicio.ToString(@"hh\:mm") – @r.HoraFin.ToString(@"hh\:mm")</p>
 
-                    @if (reserva.Estado == "Confirmada")
+                    @if (r.Estado == "Confirmada")
                     {
-                        @if (reservaACancelar == reserva.Id)
+                        @if (reservaACancelar == r.Id)
                         {
                             <div class="cr-confirm">
-                                <p class="cr-confirm-msg">¿Seguro que deseas cancelar esta reserva?</p>
+                                <p>¿Confirmas la cancelación?</p>
                                 <div class="cr-confirm-btns">
-                                    <button class="cr-btn cr-btn--danger" @onclick="() => ConfirmarCancelacion(reserva.Id)" disabled="@cancelando">
-                                        @if (cancelando) { <span class="cr-spinner-sm"></span> }
-                                        else { <span>Si, cancelar</span> }
+                                    <button class="cr-btn cr-btn--danger" @onclick="() => ConfirmarCancelacion(r.Id)" disabled="@cancelando">
+                                        @if (cancelando) { <span class="cr-spinner-sm"></span> } else { <span>Sí, cancelar</span> }
                                     </button>
-                                    <button class="cr-btn cr-btn--secondary" @onclick="CancelarAccion">No, volver</button>
+                                    <button class="cr-btn cr-btn--ghost" @onclick="() => reservaACancelar = null">No, volver</button>
                                 </div>
                             </div>
                         }
                         else
                         {
-                            <button class="cr-btn cr-btn--outline" @onclick="() => SolicitarCancelacion(reserva.Id)">
-                                Cancelar reserva
-                            </button>
-                            <button class="cr-btn cr-btn--outline-blue" @onclick="() => Modificar(reserva.Id)">
-                                Modificar
-                            </button>
+                            <div class="cr-actions">
+                                <button class="cr-btn cr-btn--outline-red" @onclick="() => SolicitarCancelacion(r.Id)">Cancelar</button>
+                                <button class="cr-btn cr-btn--outline-blue" @onclick="() => Modificar(r.Id)">Modificar</button>
+                            </div>
                         }
                     }
                 </div>
@@ -87,134 +78,95 @@
 
 @code {
     private List<ReservaVista> reservas = new();
-    private bool cargando = true;
-    private bool cancelando = false;
-    private int? reservaACancelar = null;
-    private string? mensajeExito;
-    private string? errorMensaje;
+    private bool cargando = true, cancelando = false;
+    private int? reservaACancelar;
+    private string? mensajeExito, errorMensaje;
 
     protected override async Task OnInitializedAsync()
     {
-        await CargarReservas();
+        if (!Sesion.Autenticado) { NavManager.NavigateTo("/login"); return; }
+        await Cargar();
     }
 
-    private async Task CargarReservas()
+    private async Task Cargar()
     {
         cargando = true;
         try
         {
             using var http = new System.Net.Http.HttpClient();
-            var resultado = await http.GetFromJsonAsync<List<ReservaVista>>("http://localhost:5085/api/reservas/usuario/1");
-            reservas = resultado ?? new();
+            var r = await http.GetFromJsonAsync<ApiResp>($"http://localhost:5085/api/reservas/usuario/{Sesion.UsuarioId}");
+            reservas = r?.Data ?? new();
         }
-        catch
-        {
-            errorMensaje = "No se pudieron cargar las reservas.";
-        }
-        finally
-        {
-            cargando = false;
-        }
+        catch { errorMensaje = "No se pudieron cargar las reservas."; }
+        finally { cargando = false; }
     }
 
-    private void SolicitarCancelacion(int id)
-    {
-        mensajeExito = null;
-        errorMensaje = null;
-        reservaACancelar = id;
-    }
+    private void SolicitarCancelacion(int id) { mensajeExito = errorMensaje = null; reservaACancelar = id; }
 
-    private void CancelarAccion()
-    {
-        reservaACancelar = null;
-    }
-    private void Modificar(int id)
-{
-    NavManager.NavigateTo($"/modificar-reserva/{id}");
-}
+    private void Modificar(int id) => NavManager.NavigateTo($"/modificar-reserva/{id}");
 
     private async Task ConfirmarCancelacion(int id)
     {
         cancelando = true;
-        errorMensaje = null;
-        mensajeExito = null;
-
         try
         {
             using var http = new System.Net.Http.HttpClient();
-            var respuesta = await http.PatchAsync($"http://localhost:5085/api/reservas/{id}/cancelar", null);
-
-            if (respuesta.IsSuccessStatusCode)
-            {
-                mensajeExito = "Reserva cancelada exitosamente.";
-                reservaACancelar = null;
-                await CargarReservas();
-            }
-            else
-            {
-                errorMensaje = "No se pudo cancelar la reserva. Intenta de nuevo.";
-            }
+            var r = await http.PatchAsync($"http://localhost:5085/api/reservas/{id}/cancelar", null);
+            if (r.IsSuccessStatusCode) { mensajeExito = "Reserva cancelada."; reservaACancelar = null; await Cargar(); }
+            else errorMensaje = "No se pudo cancelar.";
         }
-        catch
-        {
-            errorMensaje = "No se pudo conectar al servidor.";
-        }
-        finally
-        {
-            cancelando = false;
-        }
+        catch { errorMensaje = "Error de conexión."; }
+        finally { cancelando = false; }
     }
 
+    class ApiResp { public List<ReservaVista> Data { get; set; } = new(); }
     public class ReservaVista
     {
-        public int      Id         { get; set; }
-        public int      CanchaId   { get; set; }
-        public DateTime Fecha      { get; set; }
+        public int Id { get; set; }
+        public int CanchaId { get; set; }
+        public DateTime Fecha { get; set; }
         public TimeSpan HoraInicio { get; set; }
-        public TimeSpan HoraFin    { get; set; }
-        public string   Estado     { get; set; } = string.Empty;
+        public TimeSpan HoraFin { get; set; }
+        public string Estado { get; set; } = string.Empty;
     }
 }
 
 <style>
-    .cr-wrap { max-width: 600px; margin: 2rem auto; padding: 0 1rem; font-family: Segoe UI, sans-serif; }
+    .cr-wrap  { max-width: 700px; margin: 2rem auto; padding: 0 1.25rem; font-family: Segoe UI, sans-serif; }
     .cr-header { margin-bottom: 1.5rem; }
-    .cr-title { font-size: 22px; font-weight: 600; margin-bottom: 4px; }
-    .cr-subtitle { font-size: 14px; color: #5F5E5A; }
-
+    .cr-title { font-size: 1.6rem; font-weight: 700; margin: 0 0 4px; }
+    .cr-sub   { font-size: .875rem; color: #6b7280; margin: 0; }
     .cr-toast { padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 1rem; }
-    .cr-toast--success { background: #EAF3DE; color: #3B6D11; border: 0.5px solid #C0DD97; }
-    .cr-toast--error { background: #FCEBEB; color: #A32D2D; border: 0.5px solid #F7C1C1; }
-
-    .cr-loading { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 3rem; color: #5F5E5A; }
-    .cr-spinner { width: 28px; height: 28px; border: 3px solid rgba(24,95,165,.2); border-top-color: #185FA5; border-radius: 50%; animation: spin .7s linear infinite; }
-    .cr-spinner-sm { width: 14px; height: 14px; border: 2px solid rgba(255,255,255,.35); border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; display: inline-block; }
+    .cr-toast--ok  { background: #dcfce7; color: #166534; border: 1px solid #bbf7d0; }
+    .cr-toast--err { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+    .cr-empty { text-align: center; padding: 3rem; color: #9ca3af; }
+    .cr-link  { color: #6366f1; font-weight: 600; text-decoration: none; font-size: .875rem; }
+    .cr-grid  { display: flex; flex-direction: column; gap: 1rem; }
+    .cr-card  { background: #fff; border: 1px solid #e5e7eb; border-radius: 16px; padding: 1.25rem; box-shadow: 0 1px 4px rgba(0,0,0,.05); }
+    .cr-top   { display: flex; justify-content: space-between; align-items: center; margin-bottom: .5rem; }
+    .cr-badge { font-size: .72rem; font-weight: 700; padding: 3px 10px; border-radius: 20px; }
+    .cr-badge--ok  { background: #dcfce7; color: #166534; }
+    .cr-badge--off { background: #f1f5f9; color: #64748b; }
+    .cr-fecha { font-size: .8rem; color: #9ca3af; }
+    .cr-nombre { font-size: 1.05rem; font-weight: 700; margin: 0 0 4px; color: #111827; }
+    .cr-horario { font-size: .875rem; color: #6b7280; margin: 0 0 .75rem; }
+    .cr-actions { display: flex; gap: .5rem; }
+    .cr-confirm { background: #fffbeb; border: 1px solid #fde68a; border-radius: 8px; padding: 12px; }
+    .cr-confirm p { font-size: .875rem; font-weight: 500; color: #92400e; margin: 0 0 .5rem; }
+    .cr-confirm-btns { display: flex; gap: .5rem; }
+    .cr-btn { padding: 8px 16px; font-size: .82rem; font-weight: 600; border-radius: 8px; cursor: pointer; border: none; display: flex; align-items: center; gap: 6px; }
+    .cr-btn--danger { background: #dc2626; color: #fff; }
+    .cr-btn--danger:hover:not(:disabled) { background: #b91c1c; }
+    .cr-btn--ghost  { background: #f1f5f9; color: #475569; }
+    .cr-btn--outline-red  { background: none; border: 1px solid #dc2626; color: #dc2626; }
+    .cr-btn--outline-red:hover { background: #fef2f2; }
+    .cr-btn--outline-blue { background: none; border: 1px solid #6366f1; color: #6366f1; }
+    .cr-btn--outline-blue:hover { background: #eef2ff; }
+    .cr-btn:disabled { opacity: .6; cursor: not-allowed; }
+    .cr-spinner-sm { width: 13px; height: 13px; border: 2px solid rgba(255,255,255,.4); border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; }
+    .cr-card--sk { pointer-events: none; }
+    .sk { border-radius: 6px; margin-bottom: 8px; background: linear-gradient(90deg,#f0f0f0 25%,#e0e0e0 50%,#f0f0f0 75%); background-size: 200% 100%; animation: shimmer 1.4s ease-in-out infinite; }
+    .sk-badge { height: 20px; width: 80px; border-radius: 20px; } .sk-t { height: 18px; width: 50%; } .sk-l { height: 13px; width: 75%; } .sk-s { width: 45%; }
     @@keyframes spin { to { transform: rotate(360deg); } }
-
-    .cr-empty { text-align: center; padding: 3rem; color: #5F5E5A; }
-    .cr-link { color: #185FA5; font-weight: 500; text-decoration: none; font-size: 14px; }
-
-    .cr-list { display: flex; flex-direction: column; gap: 1rem; }
-    .cr-card { background: #fff; border: 0.5px solid rgba(0,0,0,.12); border-radius: 12px; padding: 1.25rem; }
-    .cr-card-info { margin-bottom: 1rem; }
-    .cr-badge { font-size: 11px; padding: 3px 8px; border-radius: 20px; font-weight: 500; }
-    .cr-badge--activa { background: #EAF3DE; color: #3B6D11; }
-    .cr-badge--cancelada { background: #F1EFE8; color: #5F5E5A; }
-    .cr-cancha { font-size: 16px; font-weight: 600; margin: 6px 0 4px; }
-    .cr-detalle { font-size: 13px; color: #5F5E5A; margin: 2px 0; }
-
-    .cr-confirm { background: #FFF8E6; border: 0.5px solid #EFD28A; border-radius: 8px; padding: 12px; }
-    .cr-confirm-msg { font-size: 13px; font-weight: 500; margin-bottom: 10px; color: #7A5C00; }
-    .cr-confirm-btns { display: flex; gap: 8px; }
-
-    .cr-btn { padding: 8px 16px; font-size: 13px; font-weight: 500; border-radius: 8px; cursor: pointer; border: none; display: flex; align-items: center; gap: 6px; transition: background .15s; }
-    .cr-btn--danger { background: #E24B4A; color: #fff; }
-    .cr-btn--danger:hover:not(:disabled) { background: #B83130; }
-    .cr-btn--secondary { background: #F1EFE8; color: #444441; }
-    .cr-btn--secondary:hover { background: #E0DED6; }
-    .cr-btn--outline { background: none; border: 0.5px solid #E24B4A; color: #E24B4A; }
-    .cr-btn--outline:hover { background: #FCEBEB; }
-    .cr-btn:disabled { opacity: 0.6; cursor: not-allowed; }
-    .cr-btn--outline-blue { background: none; border: 0.5px solid #185FA5; color: #185FA5; }
-    .cr-btn--outline-blue:hover { background: #E6F1FB; }
+    @@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 </style>

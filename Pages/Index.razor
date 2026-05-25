@@ -1,10 +1,106 @@
-﻿@page "/"
+@page "/"
+@using ReservaCancha.Services
+@inject SesionService Sesion
+@inject NavigationManager NavManager
+@implements IDisposable
 
 <PageTitle>ReservaCancha</PageTitle>
 
-<div style="max-width:460px; margin: 4rem auto; padding: 0 1rem; font-family: Segoe UI, sans-serif; text-align:center;">
-    <h1 style="font-size:28px; font-weight:600; margin-bottom:8px;">Bienvenido a ReservaCancha</h1>
-    <p style="color:#5F5E5A; margin-bottom:2rem;">Reserva tu cancha deportiva de forma fácil y rápida.</p>
-    <a href="/registro" style="background:#185FA5; color:#fff; padding:10px 24px; border-radius:8px; text-decoration:none; font-weight:500; margin-right:8px;">Crear cuenta</a>
-    <a href="/login" style="border:1px solid #185FA5; color:#185FA5; padding:10px 24px; border-radius:8px; text-decoration:none; font-weight:500;">Iniciar sesión</a>
-</div>
+@if (Sesion.Autenticado)
+{
+    <div class="ix-wrap">
+        <div class="ix-hero">
+            <div class="ix-avatar">@Sesion.Nombre[0].ToString().ToUpper()</div>
+            <h1 class="ix-title">¡Hola, @Sesion.Nombre.Split(' ')[0]!</h1>
+            <p class="ix-sub">¿Qué quieres hacer hoy?</p>
+        </div>
+        <div class="ix-grid">
+            <a href="/canchas" class="ix-card">
+                <span class="ix-icon">📍</span>
+                <span class="ix-label">Ver canchas</span>
+                <span class="ix-desc">Explora las canchas disponibles</span>
+            </a>
+            <a href="/reservar/1" class="ix-card ix-card--accent">
+                <span class="ix-icon">📅</span>
+                <span class="ix-label">Reservar</span>
+                <span class="ix-desc">Haz una nueva reserva</span>
+            </a>
+            <a href="/mis-reservas" class="ix-card">
+                <span class="ix-icon">🗂️</span>
+                <span class="ix-label">Mis reservas</span>
+                <span class="ix-desc">Gestiona tus reservas activas</span>
+            </a>
+            <a href="/historial" class="ix-card">
+                <span class="ix-icon">📋</span>
+                <span class="ix-label">Historial</span>
+                <span class="ix-desc">Ve tu historial completo</span>
+            </a>
+            @if (Sesion.EsAdmin)
+            {
+                <a href="/admin/reservas" class="ix-card ix-card--admin">
+                    <span class="ix-icon">⚙️</span>
+                    <span class="ix-label">Panel Admin</span>
+                    <span class="ix-desc">Visualiza todas las reservas</span>
+                </a>
+            }
+        </div>
+    </div>
+}
+else
+{
+    <div class="ix-landing">
+        <div class="ix-ball">⚽</div>
+        <h1 class="ix-landing-title">ReservaCancha</h1>
+        <p class="ix-landing-sub">Reserva tu cancha deportiva de forma fácil y rápida.</p>
+        <div class="ix-landing-btns">
+            <a href="/registro" class="ix-btn ix-btn--primary">Crear cuenta</a>
+            <a href="/login"    class="ix-btn ix-btn--outline">Iniciar sesión</a>
+        </div>
+        <div class="ix-features">
+            <div class="ix-feat"><span>📍</span><p>Canchas de fútbol, básquetbol y más</p></div>
+            <div class="ix-feat"><span>🕐</span><p>Reserva por horarios sin conflictos</p></div>
+            <div class="ix-feat"><span>📋</span><p>Historial completo de tus reservas</p></div>
+        </div>
+    </div>
+}
+
+@code {
+    protected override void OnInitialized() => Sesion.OnCambio += Refresh;
+    private void Refresh() => InvokeAsync(StateHasChanged);
+    public void Dispose() => Sesion.OnCambio -= Refresh;
+}
+
+<style>
+    /* === LOGUEADO === */
+    .ix-wrap  { max-width: 700px; margin: 2.5rem auto; padding: 0 1.25rem; font-family: Segoe UI, sans-serif; }
+    .ix-hero  { text-align: center; margin-bottom: 2rem; }
+    .ix-avatar { width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg,#6366f1,#8b5cf6); color:#fff; font-size:1.6rem; font-weight:700; display:flex; align-items:center; justify-content:center; margin: 0 auto 1rem; }
+    .ix-title { font-size: 1.6rem; font-weight: 700; margin: 0 0 4px; }
+    .ix-sub   { font-size: .9rem; color: #6b7280; margin: 0; }
+    .ix-grid  { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; }
+    .ix-card  { background:#fff; border:1px solid #e5e7eb; border-radius:16px; padding:1.25rem; text-decoration:none; display:flex; flex-direction:column; gap:.25rem; transition:box-shadow .15s, transform .15s; }
+    .ix-card:hover { box-shadow:0 6px 20px rgba(0,0,0,.1); transform:translateY(-2px); }
+    .ix-icon  { font-size:1.6rem; }
+    .ix-label { font-size:.95rem; font-weight:700; color:#111827; }
+    .ix-desc  { font-size:.78rem; color:#6b7280; }
+    .ix-card--accent { border-color:#6366f1; background:#eef2ff; }
+    .ix-card--accent .ix-label { color:#4f46e5; }
+    .ix-card--admin { border-color:#f59e0b; background:#fffbeb; }
+    .ix-card--admin .ix-label { color:#92400e; }
+
+    /* === NO LOGUEADO === */
+    .ix-landing { max-width: 480px; margin: 4rem auto; padding: 0 1.25rem; text-align: center; font-family: Segoe UI, sans-serif; }
+    .ix-ball   { font-size: 3.5rem; margin-bottom: 1rem; }
+    .ix-landing-title { font-size: 2rem; font-weight: 800; margin: 0 0 .5rem; color:#111827; }
+    .ix-landing-sub   { font-size: 1rem; color: #6b7280; margin: 0 0 2rem; }
+    .ix-landing-btns  { display: flex; gap: .75rem; justify-content: center; margin-bottom: 2.5rem; flex-wrap:wrap; }
+    .ix-btn   { padding: 11px 28px; border-radius: 10px; font-size: .9rem; font-weight: 600; text-decoration: none; transition: background .15s; }
+    .ix-btn--primary { background: #4f46e5; color: #fff; }
+    .ix-btn--primary:hover { background: #4338ca; }
+    .ix-btn--outline  { border: 1.5px solid #4f46e5; color: #4f46e5; }
+    .ix-btn--outline:hover { background: #eef2ff; }
+    .ix-features { display: flex; flex-direction: column; gap: .75rem; text-align: left; }
+    .ix-feat { display: flex; align-items: center; gap: .75rem; background:#f9fafb; border:1px solid #e5e7eb; border-radius:10px; padding:.75rem 1rem; }
+    .ix-feat span { font-size: 1.4rem; }
+    .ix-feat p { font-size:.875rem; color:#374151; margin:0; font-weight:500; }
+</style>
