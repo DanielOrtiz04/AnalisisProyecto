@@ -1,240 +1,124 @@
-@page "/modificar-reserva/{Id:int}"
-
+@page "/registro"
 @using System.Net.Http.Json
+@using ReservaCancha.Services
 @inject HttpClient Http
 @inject NavigationManager NavManager
+@inject SesionService Sesion
 
-<PageTitle>Modificar Reserva</PageTitle>
+<PageTitle>Registro | ReservaCancha</PageTitle>
 
-<div class="mr-wrap">
+<div class="rg-wrap">
+    <div class="rg-card">
+        <div class="rg-logo">⚽</div>
+        <h1 class="rg-title">Crear cuenta</h1>
+        <p class="rg-sub">Regístrate para reservar canchas</p>
 
-    <div class="mr-header">
-        <h1>Modificar Reserva</h1>
-        <p>Cambia la fecha o el horario de tu reserva.</p>
+        @if (!string.IsNullOrEmpty(errorMensaje))
+        {
+            <div class="rg-alert rg-alert--error">@errorMensaje</div>
+        }
+
+        <div class="rg-field">
+            <label>Nombre completo</label>
+            <input type="text" class="rg-input" placeholder="Tu nombre" @bind="nombre" @bind:event="oninput" />
+        </div>
+        <div class="rg-field">
+            <label>Correo electrónico</label>
+            <input type="email" class="rg-input" placeholder="correo@ejemplo.com" @bind="correo" @bind:event="oninput" />
+        </div>
+        <div class="rg-field">
+            <label>Teléfono</label>
+            <input type="tel" class="rg-input" placeholder="Número de teléfono" @bind="telefono" @bind:event="oninput" />
+        </div>
+        <div class="rg-field">
+            <label>Contraseña</label>
+            <input type="password" class="rg-input" placeholder="Mín. 8 caracteres, una mayúscula y un número" @bind="password" @bind:event="oninput" />
+        </div>
+
+        <button class="rg-btn" @onclick="Registrar" disabled="@cargando">
+            @if (cargando) { <span class="rg-spinner"></span> }
+            else { <span>Crear cuenta</span> }
+        </button>
+
+        <p class="rg-foot">¿Ya tienes cuenta? <a href="/login">Inicia sesión</a></p>
     </div>
-
-    @if (!string.IsNullOrEmpty(mensaje))
-    {
-        <div class="mr-alert-success">
-            @mensaje
-        </div>
-    }
-
-    @if (!string.IsNullOrEmpty(error))
-    {
-        <div class="mr-alert-error">
-            @error
-        </div>
-    }
-
-    @if (cargando)
-    {
-        <p>Cargando reserva...</p>
-    }
-    else
-    {
-        <div class="mr-form">
-
-            <div class="mr-group">
-                <label>Nueva Fecha</label>
-                <input type="date"
-                       class="mr-input"
-                       @bind="fechaString" />
-            </div>
-
-            <div class="mr-group">
-                <label>Hora Inicio</label>
-                <input type="time"
-                       class="mr-input"
-                       @bind="horaInicioString" />
-            </div>
-
-            <div class="mr-group">
-                <label>Hora Fin</label>
-                <input type="time"
-                       class="mr-input"
-                       @bind="horaFinString" />
-            </div>
-
-            <button class="mr-btn" @onclick="GuardarCambios" disabled="@guardando">
-
-                @if (guardando)
-                {
-                    <span>Guardando...</span>
-                }
-                else
-                {
-                    <span>Guardar Cambios</span>
-                }
-
-            </button>
-
-        </div>
-    }
 </div>
 
 @code {
+    private string nombre   = string.Empty;
+    private string correo   = string.Empty;
+    private string telefono = string.Empty;
+    private string password = string.Empty;
+    private bool   cargando = false;
+    private string? errorMensaje;
 
-    [Parameter]
-    public int Id { get; set; }
-
-    private bool cargando = true;
-    private bool guardando = false;
-
-    private string? mensaje;
-    private string? error;
-
-    private string fechaString = "";
-    private string horaInicioString = "";
-    private string horaFinString = "";
-
-    protected override async Task OnInitializedAsync()
+    private async Task Registrar()
     {
+        errorMensaje = null;
+        if (string.IsNullOrWhiteSpace(nombre) || string.IsNullOrWhiteSpace(correo) ||
+            string.IsNullOrWhiteSpace(telefono) || string.IsNullOrWhiteSpace(password))
+        {
+            errorMensaje = "Todos los campos son requeridos.";
+            return;
+        }
+        cargando = true;
         try
         {
-            var reserva = await Http.GetFromJsonAsync<ReservaDto>(
-                $"http://localhost:5085/api/reservas/{Id}");
+            // Paso 1: registrar
+            var resp = await Http.PostAsJsonAsync("http://localhost:5085/api/usuarios/registrar",
+                new { nombre, correo, telefono, password });
 
-            if (reserva != null)
+            if (!resp.IsSuccessStatusCode)
             {
-                fechaString = reserva.Fecha.ToString("yyyy-MM-dd");
-                horaInicioString = reserva.HoraInicio;
-                horaFinString = reserva.HoraFin;
+                try
+                {
+                    var err = await resp.Content.ReadFromJsonAsync<ErrResp>();
+                    errorMensaje = err?.Mensaje ?? "Error al crear la cuenta.";
+                }
+                catch { errorMensaje = "Error al crear la cuenta."; }
+                return;
             }
-        }
-        catch
-        {
-            error = "No se pudo cargar la reserva.";
-        }
-        finally
-        {
-            cargando = false;
-        }
-    }
 
-    private async Task GuardarCambios()
-    {
-        guardando = true;
+            // Paso 2: login automático
+            var loginResp = await Http.PostAsJsonAsync("http://localhost:5085/api/usuarios/login",
+                new { Correo = correo, Password = password });
 
-        mensaje = null;
-        error = null;
-
-        try
-        {
-            var request = new
+            if (loginResp.IsSuccessStatusCode)
             {
-                Fecha = DateTime.Parse(fechaString),
-                HoraInicio = TimeSpan.Parse(horaInicioString),
-                HoraFin = TimeSpan.Parse(horaFinString)
-            };
-
-            var response = await Http.PatchAsJsonAsync(
-                $"http://localhost:5085/api/reservas/{Id}/modificar",
-                request);
-
-            if (response.IsSuccessStatusCode)
-            {
-                mensaje = "Reserva modificada exitosamente.";
-
-                await Task.Delay(1500);
-
-                NavManager.NavigateTo("/mis-reservas");
+                var r = await loginResp.Content.ReadFromJsonAsync<LoginResp>();
+                Sesion.IniciarSesion(r!.UsuarioId, r.Nombre, correo.Trim().ToLower());
+                NavManager.NavigateTo($"/perfil/{r.UsuarioId}");
             }
             else
             {
-                error = "No se pudo modificar la reserva.";
+                NavManager.NavigateTo("/login");
             }
         }
-        catch
-        {
-            error = "Error de conexión con el servidor.";
-        }
-        finally
-        {
-            guardando = false;
-        }
+        catch { errorMensaje = "No se pudo conectar al servidor."; }
+        finally { cargando = false; }
     }
 
-    public class ReservaDto
-    {
-        public int Id { get; set; }
-
-        public DateTime Fecha { get; set; }
-
-        public string HoraInicio { get; set; } = "";
-
-        public string HoraFin { get; set; } = "";
-    }
+    record LoginResp(int UsuarioId, string Nombre, string Mensaje);
+    record ErrResp(string Mensaje);
 }
 
 <style>
-    .mr-wrap {
-        max-width: 500px;
-        margin: 2rem auto;
-        padding: 1rem;
-        font-family: Segoe UI, sans-serif;
-    }
-
-    .mr-header h1 {
-        font-size: 24px;
-        margin-bottom: 6px;
-    }
-
-    .mr-header p {
-        color: #666;
-        margin-bottom: 1.5rem;
-    }
-
-    .mr-form {
-        display: flex;
-        flex-direction: column;
-        gap: 1rem;
-    }
-
-    .mr-group {
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-    }
-
-    .mr-input {
-        padding: 10px;
-        border-radius: 8px;
-        border: 1px solid #ccc;
-    }
-
-    .mr-btn {
-        background: #185FA5;
-        color: white;
-        border: none;
-        padding: 12px;
-        border-radius: 8px;
-        cursor: pointer;
-        font-weight: 600;
-    }
-
-    .mr-btn:hover {
-        background: #144d87;
-    }
-
-    .mr-btn:disabled {
-        opacity: .6;
-        cursor: not-allowed;
-    }
-
-    .mr-alert-success {
-        background: #EAF3DE;
-        color: #3B6D11;
-        padding: 10px;
-        border-radius: 8px;
-        margin-bottom: 1rem;
-    }
-
-    .mr-alert-error {
-        background: #FCEBEB;
-        color: #A32D2D;
-        padding: 10px;
-        border-radius: 8px;
-        margin-bottom: 1rem;
-    }
+    .rg-wrap  { min-height: 80vh; display: flex; align-items: center; justify-content: center; padding: 1rem; }
+    .rg-card  { background: #fff; border: 1px solid rgba(0,0,0,.1); border-radius: 16px; padding: 2rem; width: 100%; max-width: 380px; box-shadow: 0 4px 24px rgba(0,0,0,.07); }
+    .rg-logo  { font-size: 2.5rem; text-align: center; margin-bottom: .5rem; }
+    .rg-title { font-size: 1.4rem; font-weight: 700; text-align: center; margin: 0 0 4px; }
+    .rg-sub   { font-size: .85rem; color: #888; text-align: center; margin: 0 0 1.5rem; }
+    .rg-alert { padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 1rem; }
+    .rg-alert--error { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+    .rg-field { margin-bottom: 1rem; }
+    .rg-field label { display: block; font-size: .8rem; font-weight: 600; color: #555; margin-bottom: 5px; }
+    .rg-input { width: 100%; padding: 10px 12px; border: 1px solid #ddd; border-radius: 8px; font-size: .9rem; outline: none; box-sizing: border-box; transition: border .15s; }
+    .rg-input:focus { border-color: #6366f1; box-shadow: 0 0 0 3px rgba(99,102,241,.15); }
+    .rg-btn   { width: 100%; padding: 11px; background: #4f46e5; color: #fff; border: none; border-radius: 8px; font-size: .9rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: .5rem; transition: background .15s; }
+    .rg-btn:hover:not(:disabled) { background: #4338ca; }
+    .rg-btn:disabled { background: #a5b4fc; cursor: not-allowed; }
+    .rg-spinner { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,.4); border-top-color: #fff; border-radius: 50%; animation: spin .7s linear infinite; }
+    .rg-foot  { text-align: center; font-size: .82rem; color: #888; margin-top: 1.25rem; }
+    .rg-foot a { color: #4f46e5; font-weight: 600; text-decoration: none; }
+    @@keyframes spin { to { transform: rotate(360deg); } }
 </style>
