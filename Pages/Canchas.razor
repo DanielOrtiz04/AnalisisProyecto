@@ -1,213 +1,201 @@
-﻿@page "/canchas"
+@page "/canchas"
 @using ReservaCancha.Models
+@using ReservaCancha.Services
 @inject NavigationManager NavManager
 @inject HttpClient Http
+@inject SesionService Sesion
 
 <PageTitle>Canchas | ReservaCancha</PageTitle>
 
-<h1>Canchas disponibles</h1>
-
-<h3>
-    @(nuevaCancha.Id == 0 ? "Agregar cancha" : "Editar cancha")
-</h3>
-
-<EditForm Model="nuevaCancha"
-          OnValidSubmit="GuardarCancha">
-
-    <div class="mb-2">
-        <InputText class="form-control"
-                   placeholder="Nombre"
-                   @bind-Value="nuevaCancha.Nombre" />
+<div class="ca-wrap">
+    <div class="ca-header">
+        <h1 class="ca-title">Canchas disponibles</h1>
+        <p class="ca-sub">Elige la cancha que quieres reservar</p>
     </div>
 
-    <div class="mb-2">
-        <InputText class="form-control"
-                   placeholder="Tipo"
-                   @bind-Value="nuevaCancha.Tipo" />
-    </div>
-
-    <div class="mb-2">
-        <InputText class="form-control"
-                   placeholder="Descripción"
-                   @bind-Value="nuevaCancha.Descripcion" />
-    </div>
-
-    <div class="mb-2">
-        <InputNumber class="form-control"
-                     placeholder="Precio"
-                     @bind-Value="nuevaCancha.Precio" />
-    </div>
-
-    <div class="form-check mb-3">
-        <InputCheckbox class="form-check-input"
-                       @bind-Value="nuevaCancha.Disponible" />
-
-        <label class="form-check-label">
-            Disponible
-        </label>
-    </div>
-
-    <button type="submit"
-            class="btn btn-primary">
-
-        Guardar
-
-    </button>
-
-</EditForm>
-
-<hr />
-
-@if (cargando)
-{
-    <p>Cargando canchas...</p>
-}
-else if (errorMensaje != null)
-{
-    <div class="alert alert-danger">
-        @errorMensaje
-    </div>
-}
-else if (canchas.Count == 0)
-{
-    <p>No hay canchas disponibles.</p>
-}
-else
-{
-    @foreach (var cancha in canchas)
+    @* Solo el admin ve el formulario de gestión *@
+    @if (Sesion.EsAdmin)
     {
-        <div class="card mb-3 p-3">
-
-            <h4>@cancha.Nombre</h4>
-
-            <p>
-                <strong>Tipo:</strong>
-                @cancha.Tipo
-            </p>
-
-            <p>
-                <strong>Descripción:</strong>
-                @cancha.Descripcion
-            </p>
-
-            <p>
-                <strong>Precio:</strong>
-                Q.@cancha.Precio
-            </p>
-
-            <p>
-                <strong>Estado:</strong>
-                @(cancha.Disponible ? "Disponible" : "No disponible")
-            </p>
-
-            <div class="d-flex gap-2">
-
-                <button class="btn btn-success"
-                        @onclick="() => Reservar(cancha.Id)">
-                    Reservar
-                </button>
-
-                <button class="btn btn-warning"
-                        @onclick="() => Editar(cancha)">
-                    Editar
-                </button>
-
-                <button class="btn btn-danger"
-                        @onclick="() => Eliminar(cancha.Id)">
-                    Eliminar
-                </button>
-
+        <details class="ca-admin-panel">
+            <summary>⚙️ Panel Admin — @(editando?.Id > 0 ? "Editar cancha" : "Agregar cancha")</summary>
+            <div class="ca-form">
+                <div class="ca-form-row">
+                    <input class="ca-input" placeholder="Nombre" @bind="form.Nombre" />
+                    <input class="ca-input" placeholder="Tipo (Futbol, Basquetbol…)" @bind="form.Tipo" />
+                </div>
+                <input class="ca-input" placeholder="Descripción" @bind="form.Descripcion" />
+                <div class="ca-form-row">
+                    <input class="ca-input" type="number" placeholder="Precio (Q)" @bind="form.Precio" />
+                    <label class="ca-check"><input type="checkbox" @bind="form.Disponible" /> Disponible</label>
+                </div>
+                <div class="ca-form-btns">
+                    <button class="ca-btn ca-btn--primary" @onclick="GuardarCancha">
+                        @(form.Id == 0 ? "Agregar" : "Guardar cambios")
+                    </button>
+                    @if (form.Id > 0)
+                    {
+                        <button class="ca-btn ca-btn--ghost" @onclick="CancelarEdicion">Cancelar</button>
+                    }
+                </div>
             </div>
+        </details>
+    }
 
+    @if (!string.IsNullOrEmpty(errorMensaje))
+    {
+        <div class="ca-alert ca-alert--error">@errorMensaje</div>
+    }
+
+    @* RNF-3 Frontend: skeleton loader *@
+    @if (cargando)
+    {
+        <div class="ca-grid">
+            @for (int i = 0; i < 3; i++)
+            {
+                <div class="ca-card ca-card--skeleton">
+                    <div class="sk sk-title"></div>
+                    <div class="sk sk-line"></div>
+                    <div class="sk sk-line sk-short"></div>
+                    <div class="sk sk-btn"></div>
+                </div>
+            }
         </div>
     }
-}
+    else if (canchas.Count == 0)
+    {
+        <p class="ca-empty">No hay canchas disponibles.</p>
+    }
+    else
+    {
+        <div class="ca-grid">
+            @foreach (var c in canchas)
+            {
+                <div class="ca-card">
+                    <div class="ca-card-top">
+                        <span class="ca-tipo">@c.Tipo</span>
+                        <span class="ca-estado @(c.Disponible ? "ca-estado--ok" : "ca-estado--off")">
+                            @(c.Disponible ? "Disponible" : "No disponible")
+                        </span>
+                    </div>
+                    <h2 class="ca-nombre">@c.Nombre</h2>
+                    <p class="ca-desc">@c.Descripcion</p>
+                    <p class="ca-precio">Q @c.Precio / hora</p>
+                    <div class="ca-actions">
+                        @if (c.Disponible)
+                        {
+                            <button class="ca-btn ca-btn--reservar" @onclick="() => Reservar(c.Id)">
+                                📅 Reservar
+                            </button>
+                        }
+                        @if (Sesion.EsAdmin)
+                        {
+                            <button class="ca-btn ca-btn--edit" @onclick="() => Editar(c)">✏️</button>
+                            <button class="ca-btn ca-btn--del" @onclick="() => Eliminar(c.Id)">🗑️</button>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
 
 @code {
-
     private List<Cancha> canchas = new();
-
-    private Cancha nuevaCancha = new();
-
+    private Cancha form = new();
+    private Cancha? editando;
     private bool cargando = true;
-
     private string? errorMensaje;
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnInitializedAsync() => await Cargar();
+
+    private async Task Cargar()
     {
-        await ObtenerCanchas();
-    }
-
-    private async Task ObtenerCanchas()
-    {
-        cargando = true;
-        errorMensaje = null;
-
-        try
-        {
-            var resultado = await Http.GetFromJsonAsync<List<Cancha>>(
-                "http://localhost:5085/api/canchas"
-            );
-
-            canchas = resultado ?? new();
-        }
-        catch
-        {
-            errorMensaje =
-                "No se pudieron cargar las canchas.";
-        }
-        finally
-        {
-            cargando = false;
-        }
+        cargando = true; errorMensaje = null;
+        try { canchas = await Http.GetFromJsonAsync<List<Cancha>>("http://localhost:5085/api/canchas") ?? new(); }
+        catch { errorMensaje = "No se pudieron cargar las canchas."; }
+        finally { cargando = false; }
     }
 
     private async Task GuardarCancha()
     {
-        if (nuevaCancha.Id == 0)
-        {
-            await Http.PostAsJsonAsync(
-                "http://localhost:5085/api/canchas",
-                nuevaCancha
-            );
-        }
+        if (form.Id == 0)
+            await Http.PostAsJsonAsync("http://localhost:5085/api/canchas", form);
         else
-        {
-            await Http.PutAsJsonAsync(
-                $"http://localhost:5085/api/canchas/{nuevaCancha.Id}",
-                nuevaCancha
-            );
-        }
-
-        nuevaCancha = new();
-
-        await ObtenerCanchas();
+            await Http.PutAsJsonAsync($"http://localhost:5085/api/canchas/{form.Id}", form);
+        form = new(); editando = null;
+        await Cargar();
     }
 
-    private void Editar(Cancha cancha)
+    private void Editar(Cancha c)
     {
-        nuevaCancha = new Cancha
-        {
-            Id = cancha.Id,
-            Nombre = cancha.Nombre,
-            Tipo = cancha.Tipo,
-            Descripcion = cancha.Descripcion,
-            Precio = cancha.Precio,
-            Disponible = cancha.Disponible
-        };
+        editando = c;
+        form = new Cancha { Id = c.Id, Nombre = c.Nombre, Tipo = c.Tipo, Descripcion = c.Descripcion, Precio = c.Precio, Disponible = c.Disponible };
     }
+
+    private void CancelarEdicion() { form = new(); editando = null; }
 
     private async Task Eliminar(int id)
     {
-        await Http.DeleteAsync(
-            $"http://localhost:5085/api/canchas/{id}"
-        );
-
-        await ObtenerCanchas();
+        await Http.DeleteAsync($"http://localhost:5085/api/canchas/{id}");
+        await Cargar();
     }
 
-    private void Reservar(int canchaId)
+    private void Reservar(int id)
     {
-        NavManager.NavigateTo($"/reservar/{canchaId}");
+        if (!Sesion.Autenticado) { NavManager.NavigateTo("/login"); return; }
+        NavManager.NavigateTo($"/reservar/{id}");
     }
 }
+
+<style>
+    .ca-wrap  { max-width: 900px; margin: 2rem auto; padding: 0 1.25rem; font-family: Segoe UI, sans-serif; }
+    .ca-header { margin-bottom: 1.5rem; }
+    .ca-title { font-size: 1.6rem; font-weight: 700; margin: 0 0 4px; }
+    .ca-sub   { font-size: .875rem; color: #6b7280; margin: 0; }
+
+    .ca-admin-panel { background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 12px; padding: 1rem; margin-bottom: 1.5rem; }
+    .ca-admin-panel summary { cursor: pointer; font-weight: 600; font-size: .875rem; color: #475569; }
+    .ca-form { margin-top: 1rem; display: flex; flex-direction: column; gap: .75rem; }
+    .ca-form-row { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
+    .ca-input { padding: 9px 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: .875rem; outline: none; width: 100%; box-sizing: border-box; }
+    .ca-input:focus { border-color: #6366f1; }
+    .ca-check { display: flex; align-items: center; gap: 8px; font-size: .875rem; color: #475569; padding: 9px 0; }
+    .ca-form-btns { display: flex; gap: .5rem; }
+    .ca-alert { padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 1rem; }
+    .ca-alert--error { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+    .ca-empty { text-align: center; padding: 3rem; color: #9ca3af; }
+
+    /* Grid de tarjetas */
+    .ca-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 1rem; }
+    .ca-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 16px; padding: 1.25rem; display: flex; flex-direction: column; gap: .5rem; box-shadow: 0 1px 4px rgba(0,0,0,.05); transition: box-shadow .15s; }
+    .ca-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,.1); }
+    .ca-card-top { display: flex; justify-content: space-between; align-items: center; }
+    .ca-tipo  { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .5px; color: #6366f1; background: #eef2ff; padding: 2px 8px; border-radius: 20px; }
+    .ca-estado { font-size: .72rem; font-weight: 600; padding: 2px 8px; border-radius: 20px; }
+    .ca-estado--ok  { background: #dcfce7; color: #166534; }
+    .ca-estado--off { background: #fee2e2; color: #991b1b; }
+    .ca-nombre { font-size: 1.1rem; font-weight: 700; margin: 4px 0 0; color: #111827; }
+    .ca-desc   { font-size: .82rem; color: #6b7280; margin: 0; flex: 1; }
+    .ca-precio { font-size: .95rem; font-weight: 600; color: #059669; margin: 4px 0 0; }
+    .ca-actions { display: flex; gap: .5rem; margin-top: .5rem; }
+
+    /* Botones */
+    .ca-btn { padding: 8px 14px; border: none; border-radius: 8px; font-size: .82rem; font-weight: 600; cursor: pointer; transition: background .15s; }
+    .ca-btn--primary  { background: #4f46e5; color: #fff; }
+    .ca-btn--primary:hover { background: #4338ca; }
+    .ca-btn--ghost    { background: #f1f5f9; color: #475569; }
+    .ca-btn--ghost:hover { background: #e2e8f0; }
+    .ca-btn--reservar { background: #059669; color: #fff; flex: 1; }
+    .ca-btn--reservar:hover { background: #047857; }
+    .ca-btn--edit { background: #fef3c7; color: #92400e; padding: 8px 10px; }
+    .ca-btn--del  { background: #fee2e2; color: #991b1b; padding: 8px 10px; }
+
+    /* Skeleton */
+    .ca-card--skeleton { pointer-events: none; }
+    .sk { border-radius: 6px; margin-bottom: 8px; background: linear-gradient(90deg,#f0f0f0 25%,#e0e0e0 50%,#f0f0f0 75%); background-size: 200% 100%; animation: shimmer 1.4s ease-in-out infinite; }
+    .sk-title { height: 20px; width: 60%; }
+    .sk-line  { height: 13px; width: 85%; }
+    .sk-short { width: 40%; }
+    .sk-btn   { height: 34px; width: 100%; border-radius: 8px; margin-top: 6px; }
+    @@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
+</style>

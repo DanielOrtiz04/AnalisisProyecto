@@ -1,26 +1,28 @@
 @page "/historial"
-@using ReservaCancha.Models
+@using ReservaCancha.Services
 @inject NavigationManager NavManager
+@inject SesionService Sesion
 
-<PageTitle>Historial de Reservas | ReservaCancha</PageTitle>
+<PageTitle>Historial | ReservaCancha</PageTitle>
 
 <div class="hr-wrap">
-
     <div class="hr-header">
         <h1 class="hr-title">Historial de Reservas</h1>
-        <p class="hr-subtitle">Lista de todas tus reservas realizadas</p>
+        <p class="hr-sub">Todas tus reservas, pasadas y activas</p>
     </div>
 
-    @if (errorMensaje != null)
-    {
-        <div class="hr-toast hr-toast--error">@errorMensaje</div>
-    }
+    @if (!string.IsNullOrEmpty(errorMensaje))
+    { <div class="hr-alert">@errorMensaje</div> }
 
     @if (cargando)
     {
-        <div class="hr-loading">
-            <div class="hr-spinner"></div>
-            <p>Cargando reservas...</p>
+        <div class="hr-list">
+            @for (int i = 0; i < 4; i++)
+            {
+                <div class="hr-card hr-card--sk">
+                    <div class="sk sk-badge"></div><div class="sk sk-t"></div><div class="sk sk-l"></div><div class="sk sk-l sk-s"></div>
+                </div>
+            }
         </div>
     }
     else if (reservas.Count == 0)
@@ -32,127 +34,100 @@
     }
     else
     {
-        <div class="hr-filtros">
-            <input class="hr-search"
-                   type="text"
-                   placeholder="Buscar por cancha o estado..."
-                   @bind="filtroTexto"
-                   @bind:event="oninput" />
-
-            <input class="hr-date"
-                   type="date"
-                   @bind="filtroFecha"
-                   @bind:after="StateHasChanged" />
-
-            <button class="hr-btn-limpiar" @onclick="LimpiarFiltros">Limpiar</button>
+        <div class="hr-filters">
+            <input class="hr-search" type="text" placeholder="Buscar por cancha o estado…"
+                   @bind="filtroTexto" @bind:event="oninput" />
+            <input class="hr-date" type="date"
+                   value="@filtroFechaStr"
+                   @onchange="e => filtroFechaStr = e.Value?.ToString() ?? string.Empty" />
+            <button class="hr-clear" @onclick="Limpiar">✕ Limpiar</button>
         </div>
 
         <div class="hr-list">
-            @foreach (var r in ReservasFiltradas)
+            @foreach (var r in Filtradas)
             {
                 <div class="hr-card">
-                    <div class="hr-card-info">
-                        <span class="hr-badge @(r.Estado == "Confirmada" ? "hr-badge--activa" : "hr-badge--cancelada")">
-                            @r.Estado
-                        </span>
-                        <h2 class="hr-cancha">Cancha #@r.CanchaId</h2>
-                        <p class="hr-detalle">Fecha: @r.Fecha.ToString("dd/MM/yyyy")</p>
-                        <p class="hr-detalle">Horario: @r.HoraInicio.ToString(@"hh\:mm") - @r.HoraFin.ToString(@"hh\:mm")</p>
+                    <div class="hr-top">
+                        <span class="hr-badge @(r.Estado == "Confirmada" ? "hr-badge--ok" : "hr-badge--off")">@r.Estado</span>
+                        <span class="hr-fecha">@r.Fecha.ToString("dd/MM/yyyy")</span>
                     </div>
+                    <h2 class="hr-nombre">Cancha #@r.CanchaId</h2>
+                    <p class="hr-horario">🕐 @r.HoraInicio – @r.HoraFin</p>
                 </div>
             }
         </div>
-
-        <p class="hr-total">
-            Mostrando <strong>@ReservasFiltradas.Count</strong> de <strong>@reservas.Count</strong> reservas
-        </p>
+        <p class="hr-count">Mostrando <strong>@Filtradas.Count</strong> de <strong>@reservas.Count</strong></p>
     }
-
 </div>
 
 @code {
-    private List<ReservaVista> reservas     = new();
-    private bool               cargando     = true;
-    private string?            errorMensaje;
-    private string             filtroTexto  = string.Empty;
-    private DateTime?          filtroFecha  = null;
+    private List<ReservaVista> reservas = new();
+    private bool cargando = true;
+    private string? errorMensaje;
+    private string filtroTexto = string.Empty;
+    private string filtroFechaStr = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
+        if (!Sesion.Autenticado) { NavManager.NavigateTo("/login"); return; }
         try
         {
             using var http = new System.Net.Http.HttpClient();
-            var resultado = await http.GetFromJsonAsync<List<ReservaVista>>("http://localhost:5085/api/reservas/usuario/1");
-            reservas = resultado ?? new();
+            var r = await http.GetFromJsonAsync<ApiResp>($"http://localhost:5085/api/reservas/usuario/{Sesion.UsuarioId}");
+            reservas = r?.Data ?? new();
         }
-        catch
-        {
-            errorMensaje = "No se pudieron cargar las reservas.";
-        }
-        finally
-        {
-            cargando = false;
-        }
+        catch { errorMensaje = "No se pudieron cargar las reservas."; }
+        finally { cargando = false; }
     }
 
-    private List<ReservaVista> ReservasFiltradas =>
-        reservas
-            .Where(r =>
-                (string.IsNullOrWhiteSpace(filtroTexto) ||
-                 r.CanchaId.ToString().Contains(filtroTexto) ||
-                 r.Estado.Contains(filtroTexto, StringComparison.OrdinalIgnoreCase))
-                &&
-                (filtroFecha == null || r.Fecha.Date == filtroFecha.Value.Date)
-            )
-            .ToList();
+    private List<ReservaVista> Filtradas => reservas.Where(r =>
+        (string.IsNullOrWhiteSpace(filtroTexto) ||
+         r.CanchaId.ToString().Contains(filtroTexto) ||
+         r.Estado.Contains(filtroTexto, StringComparison.OrdinalIgnoreCase))
+        &&
+        (string.IsNullOrEmpty(filtroFechaStr) ||
+         !DateTime.TryParse(filtroFechaStr, out var fd) ||
+         r.Fecha.Date == fd.Date)
+    ).ToList();
 
-    private void LimpiarFiltros()
-    {
-        filtroTexto = string.Empty;
-        filtroFecha = null;
-    }
+    private void Limpiar() { filtroTexto = string.Empty; filtroFechaStr = string.Empty; }
 
+    class ApiResp { public List<ReservaVista> Data { get; set; } = new(); }
     public class ReservaVista
     {
-        public int      Id         { get; set; }
-        public int      CanchaId   { get; set; }
-        public DateTime Fecha      { get; set; }
-        public TimeSpan HoraInicio { get; set; }
-        public TimeSpan HoraFin    { get; set; }
-        public string   Estado     { get; set; } = string.Empty;
+        public int Id { get; set; }
+        public int CanchaId { get; set; }
+        public DateTime Fecha { get; set; }
+        public string HoraInicio { get; set; } = string.Empty;
+        public string HoraFin { get; set; } = string.Empty;
+        public string Estado { get; set; } = string.Empty;
     }
 }
 
 <style>
-    .hr-wrap { max-width: 600px; margin: 2rem auto; padding: 0 1rem; font-family: Segoe UI, sans-serif; }
+    .hr-wrap  { max-width: 650px; margin: 2rem auto; padding: 0 1.25rem; font-family: Segoe UI, sans-serif; }
     .hr-header { margin-bottom: 1.5rem; }
-    .hr-title { font-size: 22px; font-weight: 600; margin-bottom: 4px; }
-    .hr-subtitle { font-size: 14px; color: #5F5E5A; }
-
-    .hr-toast { padding: 10px 14px; border-radius: 8px; font-size: 13px; margin-bottom: 1rem; }
-    .hr-toast--error { background: #FCEBEB; color: #A32D2D; border: 0.5px solid #F7C1C1; }
-
-    .hr-loading { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 3rem; color: #5F5E5A; }
-    .hr-spinner { width: 28px; height: 28px; border: 3px solid rgba(24,95,165,.2); border-top-color: #185FA5; border-radius: 50%; animation: spin .7s linear infinite; }
-    @@keyframes spin { to { transform: rotate(360deg); } }
-
-    .hr-empty { text-align: center; padding: 3rem; color: #5F5E5A; }
-    .hr-link { color: #185FA5; font-weight: 500; text-decoration: none; font-size: 14px; }
-
-    .hr-filtros { display: flex; gap: .6rem; flex-wrap: wrap; align-items: center; margin-bottom: 1.25rem; }
-    .hr-search, .hr-date { padding: .45rem .8rem; border: 0.5px solid rgba(0,0,0,.2); border-radius: 8px; font-size: 13px; flex: 1; min-width: 160px; outline: none; }
-    .hr-search:focus, .hr-date:focus { border-color: #185FA5; }
-    .hr-btn-limpiar { padding: .45rem 1rem; background: #F1EFE8; color: #444441; border: none; border-radius: 8px; cursor: pointer; font-size: 13px; }
-    .hr-btn-limpiar:hover { background: #E0DED6; }
-
-    .hr-list { display: flex; flex-direction: column; gap: 1rem; }
-    .hr-card { background: #fff; border: 0.5px solid rgba(0,0,0,.12); border-radius: 12px; padding: 1.25rem; }
-    .hr-card-info { }
-    .hr-badge { font-size: 11px; padding: 3px 8px; border-radius: 20px; font-weight: 500; }
-    .hr-badge--activa { background: #EAF3DE; color: #3B6D11; }
-    .hr-badge--cancelada { background: #F1EFE8; color: #5F5E5A; }
-    .hr-cancha { font-size: 16px; font-weight: 600; margin: 6px 0 4px; }
-    .hr-detalle { font-size: 13px; color: #5F5E5A; margin: 2px 0; }
-
-    .hr-total { text-align: right; color: #5F5E5A; font-size: 12px; margin-top: .75rem; }
+    .hr-title { font-size: 1.6rem; font-weight: 700; margin: 0 0 4px; }
+    .hr-sub   { font-size: .875rem; color: #6b7280; margin: 0; }
+    .hr-alert { background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; padding: 10px 14px; border-radius: 8px; margin-bottom: 1rem; font-size: 13px; }
+    .hr-empty { text-align: center; padding: 3rem; color: #9ca3af; }
+    .hr-link  { color: #6366f1; font-weight: 600; text-decoration: none; font-size: .875rem; }
+    .hr-filters { display: flex; gap: .6rem; flex-wrap: wrap; margin-bottom: 1.25rem; align-items: center; }
+    .hr-search { flex: 1; min-width: 160px; padding: 9px 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: .875rem; outline: none; }
+    .hr-date  { padding: 9px 12px; border: 1px solid #e2e8f0; border-radius: 8px; font-size: .875rem; outline: none; }
+    .hr-clear { padding: 9px 14px; background: #f1f5f9; color: #64748b; border: none; border-radius: 8px; cursor: pointer; font-size: .82rem; }
+    .hr-list  { display: flex; flex-direction: column; gap: 1rem; }
+    .hr-card  { background: #fff; border: 1px solid #e5e7eb; border-radius: 14px; padding: 1.1rem 1.25rem; box-shadow: 0 1px 4px rgba(0,0,0,.05); }
+    .hr-top   { display: flex; justify-content: space-between; align-items: center; margin-bottom: .4rem; }
+    .hr-badge { font-size: .72rem; font-weight: 700; padding: 3px 10px; border-radius: 20px; }
+    .hr-badge--ok  { background: #dcfce7; color: #166534; }
+    .hr-badge--off { background: #f1f5f9; color: #64748b; }
+    .hr-fecha { font-size: .8rem; color: #9ca3af; }
+    .hr-nombre { font-size: 1rem; font-weight: 700; margin: 0 0 2px; color: #111827; }
+    .hr-horario { font-size: .875rem; color: #6b7280; margin: 0; }
+    .hr-count { text-align: right; font-size: .78rem; color: #9ca3af; margin-top: .75rem; }
+    .hr-card--sk { pointer-events: none; }
+    .sk { border-radius: 6px; margin-bottom: 8px; background: linear-gradient(90deg,#f0f0f0 25%,#e0e0e0 50%,#f0f0f0 75%); background-size: 200% 100%; animation: shimmer 1.4s ease-in-out infinite; }
+    .sk-badge { height: 20px; width: 80px; border-radius: 20px; } .sk-t { height: 16px; width: 50%; } .sk-l { height: 12px; width: 70%; } .sk-s { width: 40%; }
+    @@keyframes shimmer { 0% { background-position: 200% 0; } 100% { background-position: -200% 0; } }
 </style>
