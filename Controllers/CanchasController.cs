@@ -11,78 +11,57 @@ namespace ReservaCancha.Controllers
     {
         private readonly AppDbContext _context;
 
-        public CanchasController(AppDbContext context)
-        {
-            _context = context;
-        }
+        public CanchasController(AppDbContext context) { _context = context; }
 
-        // GET: api/canchas
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Cancha>>> ObtenerCanchas()
-        {
-            return await _context.Canchas.ToListAsync();
-        }
+            => await _context.Canchas.AsNoTracking().ToListAsync();
 
-        // GET: api/canchas/5
         [HttpGet("{id}")]
         public async Task<ActionResult<Cancha>> ObtenerCancha(int id)
         {
-            var cancha = await _context.Canchas.FindAsync(id);
-
-            if (cancha == null)
-            {
-                return NotFound();
-            }
-
-            return cancha;
+            var c = await _context.Canchas.AsNoTracking().FirstOrDefaultAsync(x => x.Id == id);
+            return c == null ? NotFound() : c;
         }
 
-        // POST: api/canchas
+        // RNF-3 + Filtrar Canchas: endpoint con filtros opcionales
+        [HttpGet("filtrar")]
+        public async Task<ActionResult<IEnumerable<Cancha>>> FiltrarCanchas(
+            [FromQuery] string? tipo,
+            [FromQuery] bool? disponible)
+        {
+            var query = _context.Canchas.AsNoTracking().AsQueryable();
+            if (!string.IsNullOrWhiteSpace(tipo))
+                query = query.Where(c => c.Tipo.ToLower().Contains(tipo.ToLower()));
+            if (disponible.HasValue)
+                query = query.Where(c => c.Disponible == disponible.Value);
+            return await query.ToListAsync();
+        }
+
         [HttpPost]
         public async Task<ActionResult<Cancha>> CrearCancha(Cancha cancha)
         {
             _context.Canchas.Add(cancha);
-
             await _context.SaveChangesAsync();
-
-            return CreatedAtAction(
-                nameof(ObtenerCancha),
-                new { id = cancha.Id },
-                cancha
-            );
+            return CreatedAtAction(nameof(ObtenerCancha), new { id = cancha.Id }, cancha);
         }
 
-        // PUT: api/canchas/5
         [HttpPut("{id}")]
         public async Task<IActionResult> EditarCancha(int id, Cancha cancha)
         {
-            if (id != cancha.Id)
-            {
-                return BadRequest();
-            }
-
+            if (id != cancha.Id) return BadRequest();
             _context.Entry(cancha).State = EntityState.Modified;
-
             await _context.SaveChangesAsync();
-
             return NoContent();
         }
 
-        // DELETE: api/canchas/5
         [HttpDelete("{id}")]
         public async Task<IActionResult> EliminarCancha(int id)
         {
-            var cancha = await _context.Canchas.FindAsync(id);
-
-            if (cancha == null)
-            {
-                return NotFound();
-            }
-
-            _context.Canchas.Remove(cancha);
-
+            var c = await _context.Canchas.FindAsync(id);
+            if (c == null) return NotFound();
+            _context.Canchas.Remove(c);
             await _context.SaveChangesAsync();
-
             return NoContent();
         }
     }

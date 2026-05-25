@@ -18,7 +18,23 @@ namespace ReservaCancha.Data
 
             modelBuilder.Entity<Cancha>()
                 .Property(c => c.Precio)
-                .HasColumnType("decimal(10,2)");
+                .HasColumnType("TEXT"); // SQLite-compatible (decimal stored as TEXT)
+
+            // RNF-3 Backend: índices para optimizar consultas frecuentes
+            // Acelera búsquedas por usuario (historial, perfil)
+            modelBuilder.Entity<Reserva>()
+                .HasIndex(r => r.UsuarioId)
+                .HasDatabaseName("IX_Reservas_UsuarioId");
+
+            // Acelera búsquedas por cancha + fecha (disponibilidad)
+            modelBuilder.Entity<Reserva>()
+                .HasIndex(r => new { r.CanchaId, r.Fecha })
+                .HasDatabaseName("IX_Reservas_CanchaId_Fecha");
+
+            // Acelera filtros por estado (reporte de confirmadas/canceladas)
+            modelBuilder.Entity<Reserva>()
+                .HasIndex(r => r.Estado)
+                .HasDatabaseName("IX_Reservas_Estado");
 
             modelBuilder.Entity<Cancha>().HasData(
                 new Cancha { Id = 1, Nombre = "Cancha Norte", Tipo = "Futbol", Precio = 150, Descripcion = "Cancha de grass sintetico con iluminacion.", Disponible = true },
