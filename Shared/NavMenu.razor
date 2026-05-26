@@ -3,173 +3,102 @@
 @inject NavigationManager NavManager
 @implements IDisposable
 
-<div class="sidebar-wrap">
-    <div class="sidebar-brand">
+<div class="sb-wrap">
+    <div class="sb-brand">
         <a href="/">⚽ ReservaCancha</a>
     </div>
 
-    <nav class="sidebar-nav">
-        <a class="nav-lnk @Activo("")" href="/">🏠 Inicio</a>
-        <a class="nav-lnk" href="/canchas">📍 Canchas</a>
-        <a class="nav-lnk" href="/filtro-canchas">🔍 Filtrar Canchas</a>
+    <nav class="sb-nav">
+
+        @* RNF-4 Frontend: secciones claramente separadas por contexto *@
+        <p class="sb-section-label">General</p>
+        <a class="sb-lnk @Activo("/")"          href="/">🏠 Inicio</a>
+        <a class="sb-lnk @Activo("canchas")"     href="/canchas">📍 Canchas</a>
+        <a class="sb-lnk @Activo("filtro")"      href="/filtro-canchas">🔍 Buscar canchas</a>
 
         @if (Sesion.Autenticado)
         {
-            <div class="nav-divider"></div>
-            <div class="nav-user">
-                <span class="nav-user-name">@Sesion.Nombre</span>
-                @if (Sesion.EsAdmin)
-                {
-                    <span class="nav-badge-admin">Admin</span>
-                }
+            <div class="sb-divider"></div>
+            <p class="sb-section-label">Mi cuenta</p>
+
+            <div class="sb-user-chip">
+                <div class="sb-avatar">@Sesion.Nombre[0].ToString().ToUpper()</div>
+                <div class="sb-user-info">
+                    <span class="sb-user-name">@Sesion.Nombre.Split(' ')[0]</span>
+                    @if (Sesion.EsAdmin)
+                    {
+                        <span class="sb-badge-admin">Admin</span>
+                    }
+                </div>
             </div>
-            <a class="nav-lnk" href="/perfil/@Sesion.UsuarioId">👤 Mi Perfil</a>
-            <a class="nav-lnk" href="/mis-reservas">📅 Mis Reservas</a>
-            <a class="nav-lnk" href="/historial">📋 Historial</a>
-            <button class="nav-logout" @onclick="CerrarSesion">🚪 Cerrar sesión</button>
+
+            <a class="sb-lnk @Activo("perfil")"       href="/perfil/@Sesion.UsuarioId">👤 Mi Perfil</a>
+            <a class="sb-lnk @Activo("mis-reservas")" href="/mis-reservas">📅 Mis Reservas</a>
+            <a class="sb-lnk @Activo("historial")"    href="/historial">📋 Historial</a>
+
+            <div class="sb-divider"></div>
+            <button class="sb-logout" @onclick="CerrarSesion" title="Cerrar sesión">
+                🚪 Cerrar sesión
+            </button>
         }
         else
         {
-            <div class="nav-divider"></div>
-            <a class="nav-lnk nav-lnk--accent" href="/login">→ Iniciar sesión</a>
-            <a class="nav-lnk" href="/registro">✏ Registrarse</a>
+            <div class="sb-divider"></div>
+            <p class="sb-section-label">Acceso</p>
+            <a class="sb-lnk sb-lnk--primary" href="/login">→ Iniciar sesión</a>
+            <a class="sb-lnk"                  href="/registro">✏ Crear cuenta</a>
         }
     </nav>
 </div>
 
 @code {
-    protected override void OnInitialized()
-    {
-        Sesion.OnCambio += ActualizarUI;
-    }
-
-    private void ActualizarUI()
-    {
-        InvokeAsync(StateHasChanged);
-    }
+    protected override void OnInitialized()    => Sesion.OnCambio += Refresh;
+    private void Refresh()                     => InvokeAsync(StateHasChanged);
+    public  void Dispose()                     => Sesion.OnCambio -= Refresh;
 
     private void CerrarSesion()
     {
         Sesion.CerrarSesion();
-        NavManager.NavigateTo("/login");
+        NavManager.NavigateTo("/");
     }
 
-    private string Activo(string href)
+    // RNF-4 Frontend: resaltar la sección activa para orientar al usuario
+    private string Activo(string segmento)
     {
-        var uri = NavManager.ToBaseRelativePath(NavManager.Uri);
-        return (href == "" && uri == "") || (href != "" && uri.StartsWith(href)) ? "nav-lnk--active" : "";
-    }
-
-    public void Dispose()
-    {
-        Sesion.OnCambio -= ActualizarUI;
+        var uri = NavManager.ToBaseRelativePath(NavManager.Uri).ToLower();
+        if (segmento == "/") return uri == "" ? "sb-lnk--active" : "";
+        return uri.StartsWith(segmento) ? "sb-lnk--active" : "";
     }
 }
 
 <style>
-    .sidebar-wrap {
-        display: flex;
-        flex-direction: column;
-        height: 100%;
-        background: linear-gradient(180deg, #1a1f3a 0%, #2d1b69 100%);
-        color: #fff;
-        font-family: Segoe UI, sans-serif;
-    }
+    .sb-wrap  { display: flex; flex-direction: column; height: 100%; background: linear-gradient(180deg, #1a1f3a 0%, #2d1b69 100%); color: #fff; font-family: Segoe UI, sans-serif; }
 
-    .sidebar-brand {
-        padding: 1.25rem 1.25rem 1rem;
-        border-bottom: 1px solid rgba(255,255,255,.1);
-    }
+    /* Marca */
+    .sb-brand { padding: 1.25rem; border-bottom: 1px solid rgba(255,255,255,.1); }
+    .sb-brand a { color: #fff; text-decoration: none; font-size: 1.05rem; font-weight: 700; letter-spacing: .3px; }
 
-    .sidebar-brand a {
-        color: #fff;
-        text-decoration: none;
-        font-size: 1.1rem;
-        font-weight: 700;
-        letter-spacing: .3px;
-    }
+    /* Nav */
+    .sb-nav  { display: flex; flex-direction: column; padding: .75rem 0; gap: 1px; flex: 1; }
 
-    .sidebar-nav {
-        display: flex;
-        flex-direction: column;
-        padding: .75rem 0;
-        gap: 2px;
-    }
+    /* RNF-4: etiquetas de sección para orientar al usuario */
+    .sb-section-label { font-size: .65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: rgba(255,255,255,.35); padding: .6rem 1.25rem .2rem; margin: 0; }
 
-    .nav-lnk {
-        display: block;
-        padding: .65rem 1.25rem;
-        color: rgba(255,255,255,.75);
-        text-decoration: none;
-        font-size: .875rem;
-        border-radius: 0;
-        transition: background .15s, color .15s;
-        border-left: 3px solid transparent;
-    }
+    .sb-lnk  { display: flex; align-items: center; gap: .5rem; padding: .6rem 1.25rem; color: rgba(255,255,255,.7); text-decoration: none; font-size: .855rem; border-left: 3px solid transparent; transition: background .15s, color .15s; }
+    .sb-lnk:hover { background: rgba(255,255,255,.09); color: #fff; }
+    .sb-lnk--active { background: rgba(255,255,255,.14); color: #fff; border-left-color: #7c83f5; font-weight: 600; }
+    .sb-lnk--primary { color: #a5b4fc; font-weight: 600; }
 
-    .nav-lnk:hover {
-        background: rgba(255,255,255,.1);
-        color: #fff;
-    }
+    .sb-divider { height: 1px; background: rgba(255,255,255,.1); margin: .5rem 1.25rem; }
 
-    .nav-lnk--active {
-        background: rgba(255,255,255,.15);
-        color: #fff;
-        border-left-color: #7c83f5;
-    }
+    /* Chip de usuario */
+    .sb-user-chip  { display: flex; align-items: center; gap: .6rem; padding: .5rem 1.25rem .6rem; }
+    .sb-avatar     { width: 30px; height: 30px; border-radius: 50%; background: linear-gradient(135deg,#6366f1,#8b5cf6); color: #fff; font-size: .85rem; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .sb-user-info  { display: flex; flex-direction: column; gap: 2px; }
+    .sb-user-name  { font-size: .8rem; font-weight: 600; color: rgba(255,255,255,.85); }
+    .sb-badge-admin { font-size: .6rem; font-weight: 700; background: #f59e0b; color: #000; padding: 1px 5px; border-radius: 8px; width: fit-content; }
 
-    .nav-lnk--accent {
-        color: #a5b4fc;
-        font-weight: 600;
-    }
-
-    .nav-divider {
-        height: 1px;
-        background: rgba(255,255,255,.1);
-        margin: .5rem 1.25rem;
-    }
-
-    .nav-user {
-        padding: .4rem 1.25rem .6rem;
-        display: flex;
-        align-items: center;
-        gap: .5rem;
-    }
-
-    .nav-user-name {
-        font-size: .78rem;
-        color: rgba(255,255,255,.55);
-        font-weight: 500;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        max-width: 120px;
-    }
-
-    .nav-badge-admin {
-        background: #f59e0b;
-        color: #000;
-        font-size: .65rem;
-        font-weight: 700;
-        padding: 1px 6px;
-        border-radius: 10px;
-    }
-
-    .nav-logout {
-        margin: .5rem 1.25rem 0;
-        padding: .55rem .75rem;
-        background: rgba(220,50,50,.2);
-        color: #fca5a5;
-        border: 1px solid rgba(220,50,50,.3);
-        border-radius: 8px;
-        cursor: pointer;
-        font-size: .8rem;
-        text-align: left;
-        transition: background .15s;
-    }
-
-    .nav-logout:hover {
-        background: rgba(220,50,50,.35);
-        color: #fff;
-    }
+    /* Logout */
+    .sb-logout { margin: 0 1rem; padding: .55rem .75rem; background: rgba(220,50,50,.18); color: #fca5a5; border: 1px solid rgba(220,50,50,.28); border-radius: 8px; cursor: pointer; font-size: .82rem; text-align: left; transition: background .15s; }
+    .sb-logout:hover { background: rgba(220,50,50,.32); color: #fff; }
 </style>
