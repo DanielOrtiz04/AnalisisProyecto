@@ -17,113 +17,113 @@ build_property._SupportedPlatformList = Linux,macOS,Windows
 build_property._SupportedPlatformList = Linux,macOS,Windows
 build_property.RootNamespace = ReservaCancha
 build_property.RootNamespace = ReservaCancha
-build_property.ProjectDir = C:\Users\Enyt9\OneDrive\Documentos\Analisis\AnalisisProyecto\
+build_property.ProjectDir = C:\Users\dani3\Desktop\AnalisisProyecto\AnalisisProyecto\
 build_property.EnableComHosting = 
 build_property.EnableGeneratedComInterfaceComImportInterop = 
 build_property.RazorLangVersion = 9.0
 build_property.SupportLocalizedComponentNames = 
 build_property.GenerateRazorMetadataSourceChecksumAttributes = 
-build_property.MSBuildProjectDirectory = C:\Users\Enyt9\OneDrive\Documentos\Analisis\AnalisisProyecto
+build_property.MSBuildProjectDirectory = C:\Users\dani3\Desktop\AnalisisProyecto\AnalisisProyecto
 build_property._RazorSourceGeneratorDebug = 
 build_property.EffectiveAnalysisLevelStyle = 9.0
 build_property.EnableCodeStyleSeverity = 
 
-[C:/Users/Enyt9/OneDrive/Documentos/Analisis/AnalisisProyecto/App.razor]
+[C:/Users/dani3/Desktop/AnalisisProyecto/AnalisisProyecto/App.razor]
 build_metadata.AdditionalFiles.TargetPath = QXBwLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Enyt9/OneDrive/Documentos/Analisis/AnalisisProyecto/Pages/CancelarReserva.razor]
+[C:/Users/dani3/Desktop/AnalisisProyecto/AnalisisProyecto/Pages/CancelarReserva.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQ2FuY2VsYXJSZXNlcnZhLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Enyt9/OneDrive/Documentos/Analisis/AnalisisProyecto/Pages/Canchas.razor]
+[C:/Users/dani3/Desktop/AnalisisProyecto/AnalisisProyecto/Pages/Canchas.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQ2FuY2hhcy5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Enyt9/OneDrive/Documentos/Analisis/AnalisisProyecto/Pages/Counter.razor]
+[C:/Users/dani3/Desktop/AnalisisProyecto/AnalisisProyecto/Pages/Counter.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQ291bnRlci5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Enyt9/OneDrive/Documentos/Analisis/AnalisisProyecto/Pages/DetalleReserva.razor]
+[C:/Users/dani3/Desktop/AnalisisProyecto/AnalisisProyecto/Pages/DetalleReserva.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcRGV0YWxsZVJlc2VydmEucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Enyt9/OneDrive/Documentos/Analisis/AnalisisProyecto/Pages/Disponibilidad.razor]
+[C:/Users/dani3/Desktop/AnalisisProyecto/AnalisisProyecto/Pages/Disponibilidad.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcRGlzcG9uaWJpbGlkYWQucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Enyt9/OneDrive/Documentos/Analisis/AnalisisProyecto/Pages/EstadoSistema.razor]
+[C:/Users/dani3/Desktop/AnalisisProyecto/AnalisisProyecto/Pages/EstadoSistema.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcRXN0YWRvU2lzdGVtYS5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Enyt9/OneDrive/Documentos/Analisis/AnalisisProyecto/Pages/FetchData.razor]
+[C:/Users/dani3/Desktop/AnalisisProyecto/AnalisisProyecto/Pages/FetchData.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcRmV0Y2hEYXRhLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Enyt9/OneDrive/Documentos/Analisis/AnalisisProyecto/Pages/FIltroCanchas.razor]
+[C:/Users/dani3/Desktop/AnalisisProyecto/AnalisisProyecto/Pages/FIltroCanchas.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcRklsdHJvQ2FuY2hhcy5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Enyt9/OneDrive/Documentos/Analisis/AnalisisProyecto/Pages/HistorialReservas.razor]
+[C:/Users/dani3/Desktop/AnalisisProyecto/AnalisisProyecto/Pages/HistorialReservas.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcSGlzdG9yaWFsUmVzZXJ2YXMucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Enyt9/OneDrive/Documentos/Analisis/AnalisisProyecto/Pages/Index.razor]
+[C:/Users/dani3/Desktop/AnalisisProyecto/AnalisisProyecto/Pages/Index.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcSW5kZXgucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Enyt9/OneDrive/Documentos/Analisis/AnalisisProyecto/Pages/Login.razor]
+[C:/Users/dani3/Desktop/AnalisisProyecto/AnalisisProyecto/Pages/Login.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcTG9naW4ucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Enyt9/OneDrive/Documentos/Analisis/AnalisisProyecto/Pages/ModificarReserva.razor]
+[C:/Users/dani3/Desktop/AnalisisProyecto/AnalisisProyecto/Pages/ModificarReserva.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcTW9kaWZpY2FyUmVzZXJ2YS5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Enyt9/OneDrive/Documentos/Analisis/AnalisisProyecto/Pages/PerfilUsuario.razor]
+[C:/Users/dani3/Desktop/AnalisisProyecto/AnalisisProyecto/Pages/PerfilUsuario.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcUGVyZmlsVXN1YXJpby5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Enyt9/OneDrive/Documentos/Analisis/AnalisisProyecto/Pages/Registro.razor]
+[C:/Users/dani3/Desktop/AnalisisProyecto/AnalisisProyecto/Pages/Registro.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcUmVnaXN0cm8ucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Enyt9/OneDrive/Documentos/Analisis/AnalisisProyecto/Pages/ReporteReservas.razor]
+[C:/Users/dani3/Desktop/AnalisisProyecto/AnalisisProyecto/Pages/ReporteReservas.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcUmVwb3J0ZVJlc2VydmFzLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Enyt9/OneDrive/Documentos/Analisis/AnalisisProyecto/Pages/Reservar.razor]
+[C:/Users/dani3/Desktop/AnalisisProyecto/AnalisisProyecto/Pages/Reservar.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcUmVzZXJ2YXIucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Enyt9/OneDrive/Documentos/Analisis/AnalisisProyecto/Pages/VisualizacionReservas.razor]
+[C:/Users/dani3/Desktop/AnalisisProyecto/AnalisisProyecto/Pages/VisualizacionReservas.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcVmlzdWFsaXphY2lvblJlc2VydmFzLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Enyt9/OneDrive/Documentos/Analisis/AnalisisProyecto/Shared/NotificacionReserva.razor]
+[C:/Users/dani3/Desktop/AnalisisProyecto/AnalisisProyecto/Shared/NotificacionReserva.razor]
 build_metadata.AdditionalFiles.TargetPath = U2hhcmVkXE5vdGlmaWNhY2lvblJlc2VydmEucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Enyt9/OneDrive/Documentos/Analisis/AnalisisProyecto/Shared/SurveyPrompt.razor]
+[C:/Users/dani3/Desktop/AnalisisProyecto/AnalisisProyecto/Shared/SurveyPrompt.razor]
 build_metadata.AdditionalFiles.TargetPath = U2hhcmVkXFN1cnZleVByb21wdC5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Enyt9/OneDrive/Documentos/Analisis/AnalisisProyecto/_Imports.razor]
+[C:/Users/dani3/Desktop/AnalisisProyecto/AnalisisProyecto/_Imports.razor]
 build_metadata.AdditionalFiles.TargetPath = X0ltcG9ydHMucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Enyt9/OneDrive/Documentos/Analisis/AnalisisProyecto/Shared/MainLayout.razor]
+[C:/Users/dani3/Desktop/AnalisisProyecto/AnalisisProyecto/Shared/MainLayout.razor]
 build_metadata.AdditionalFiles.TargetPath = U2hhcmVkXE1haW5MYXlvdXQucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = b-pjbbcdnwle
 
-[C:/Users/Enyt9/OneDrive/Documentos/Analisis/AnalisisProyecto/Shared/NavMenu.razor]
+[C:/Users/dani3/Desktop/AnalisisProyecto/AnalisisProyecto/Shared/NavMenu.razor]
 build_metadata.AdditionalFiles.TargetPath = U2hhcmVkXE5hdk1lbnUucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = b-deb145h0yu
 
-[C:/Users/Enyt9/OneDrive/Documentos/Analisis/AnalisisProyecto/Pages/Error.cshtml]
+[C:/Users/dani3/Desktop/AnalisisProyecto/AnalisisProyecto/Pages/Error.cshtml]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcRXJyb3IuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
-[C:/Users/Enyt9/OneDrive/Documentos/Analisis/AnalisisProyecto/Pages/_Host.cshtml]
+[C:/Users/dani3/Desktop/AnalisisProyecto/AnalisisProyecto/Pages/_Host.cshtml]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcX0hvc3QuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
