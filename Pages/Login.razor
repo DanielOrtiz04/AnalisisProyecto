@@ -68,8 +68,13 @@
             if (resp.IsSuccessStatusCode)
             {
                 var r = await resp.Content.ReadFromJsonAsync<LoginResp>();
-                Sesion.IniciarSesion(r!.UsuarioId, r.Nombre, correo.Trim().ToLower());
-                NavManager.NavigateTo($"/perfil/{r.UsuarioId}");
+                if (r?.Datos == null || r.Datos.UsuarioId == 0)
+                {
+                    error = "Error al procesar la respuesta del servidor.";
+                    return;
+                }
+                Sesion.IniciarSesion(r.Datos.UsuarioId, r.Datos.Nombre, correo.Trim().ToLower());
+                NavManager.NavigateTo($"/perfil/{r.Datos.UsuarioId}");
             }
             else
             {
@@ -81,7 +86,18 @@
         finally { cargando = false; }
     }
 
-    record LoginResp(int UsuarioId, string Nombre, string Mensaje);
+    class LoginResp
+    {
+        public string Mensaje { get; set; } = string.Empty;
+        public DatosLogin? Datos { get; set; }
+    }
+
+    class DatosLogin
+    {
+        public int    UsuarioId { get; set; }
+        public string Nombre    { get; set; } = string.Empty;
+    }
+
     record ErrResp(string Mensaje);
 }
 

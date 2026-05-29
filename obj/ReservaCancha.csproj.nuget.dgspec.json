@@ -1,31 +1,25 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\Enyt9\\OneDrive\\Documentos\\Analisis\\AnalisisProyecto\\ReservaCancha.csproj": {}
+    "C:\\Users\\dani3\\Desktop\\AnalisisProyecto\\AnalisisProyecto\\ReservaCancha.csproj": {}
   },
   "projects": {
-    "C:\\Users\\Enyt9\\OneDrive\\Documentos\\Analisis\\AnalisisProyecto\\ReservaCancha.csproj": {
+    "C:\\Users\\dani3\\Desktop\\AnalisisProyecto\\AnalisisProyecto\\ReservaCancha.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\Enyt9\\OneDrive\\Documentos\\Analisis\\AnalisisProyecto\\ReservaCancha.csproj",
+        "projectUniqueName": "C:\\Users\\dani3\\Desktop\\AnalisisProyecto\\AnalisisProyecto\\ReservaCancha.csproj",
         "projectName": "ReservaCancha",
-        "projectPath": "C:\\Users\\Enyt9\\OneDrive\\Documentos\\Analisis\\AnalisisProyecto\\ReservaCancha.csproj",
-        "packagesPath": "C:\\Users\\Enyt9\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\Enyt9\\OneDrive\\Documentos\\Analisis\\AnalisisProyecto\\obj\\",
+        "projectPath": "C:\\Users\\dani3\\Desktop\\AnalisisProyecto\\AnalisisProyecto\\ReservaCancha.csproj",
+        "packagesPath": "C:\\Users\\dani3\\.nuget\\packages\\",
+        "outputPath": "C:\\Users\\dani3\\Desktop\\AnalisisProyecto\\AnalisisProyecto\\obj\\",
         "projectStyle": "PackageReference",
-        "fallbackFolders": [
-          "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
-        ],
         "configFilePaths": [
-          "C:\\Users\\Enyt9\\AppData\\Roaming\\NuGet\\NuGet.Config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+          "C:\\Users\\dani3\\AppData\\Roaming\\NuGet\\NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net9.0"
         ],
         "sources": {
-          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -78,7 +72,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.306/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.301/PortableRuntimeIdentifierGraph.json"
         }
       }
     }
